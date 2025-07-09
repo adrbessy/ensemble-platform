@@ -1,0 +1,19 @@
+<h2>Créer un événement</h2>
+<form (ngSubmit)="submitForm()">
+  <label>Titre :</label>
+  <input [(ngModel)]="event.title" name="title" required /><br />
+
+  <label>Description :</label>
+  <textarea [(ngModel)]="event.description" name="description"></textarea><br />
+
+  <label>Lieu :</label>
+  <input [(ngModel)]="event.location" name="location" /><br />
+
+  <label>Date :</label>
+  <input type="date" [(ngModel)]="event.date" name="date" required /><br />
+
+  <label>Organisateur :</label>
+  <input [(ngModel)]="event.organizer" name="organizer" /><br />
+
+  <button type="submit">Créer</button>
+</form>
