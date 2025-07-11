@@ -1,1 +1,25 @@
+# Node modules
+node_modules/
+
+.angular/
+
+# Builds
+dist/
+out-tsc/
+
+# Logs
+*.log
+
+# Environment
+.env
+.env.*
+
+# IDEs
+.vscode/
 .idea/
+
+# System files
+Thumbs.db
+.DS_Store
+
+backend/data/ensembledb.mv.db
