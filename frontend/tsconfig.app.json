@@ -7,5 +7,8 @@
   },
   "files": ["src/main.ts", "src/polyfills.ts"],
   "include": ["src/**/*.d.ts", "src/**/*.ts"],
-  "exclude": ["node_modules"]
+  "exclude": [
+    "**/*.spec.ts",
+    "src/test.ts"
+  ]
 }
