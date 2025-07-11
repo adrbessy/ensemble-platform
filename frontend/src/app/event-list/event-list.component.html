@@ -1,14 +1,15 @@
 <h2 class="mb-4">Événements à venir</h2>
-<div class="row">
-  <div *ngFor="let event of events" class="col-md-6 col-lg-4 mb-4">
-    <div class="card h-100 shadow-sm">
+<div class="row g-4">
+  <div *ngFor="let event of events" class="col-12 col-sm-6 col-lg-4 mb-4">
+    <div class="card h-100 shadow-sm d-flex flex-column">
       <div class="card-body">
         <h5 class="card-title">{{ event.title }}</h5>
         <h6 class="card-subtitle mb-2 text-muted">
-          📅 {{ event.date }} | 📍 {{ event.location }}
+          <i class="bi bi-calendar-event"></i> {{ event.date }} |
+<i class="bi bi-geo-alt"></i> {{ event.location }}
         </h6>
         <p class="card-text">{{ event.description }}</p>
-        <p *ngIf="event.organizer" class="mb-0">
+        <p *ngIf="event.organizer" class="mb-0 mt-auto">
           👤 <strong>{{ event.organizer.username }}</strong>
         </p>
       </div>

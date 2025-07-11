@@ -14,7 +14,10 @@ public class User {
 
     private String username;
 
+    @Column(unique = true)
     private String email;
+
+    private String password;
 
     @OneToMany(mappedBy = "organizer")
     @JsonBackReference // pour éviter les boucles infinies
@@ -43,5 +46,13 @@ public class User {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public String getPassword() {
+        return password;
     }
 }

@@ -63,4 +63,11 @@ export class EventFormComponent {
   logSelection() {
     console.log('Sélectionné : ', this.event.organizerId);
   }
+
+  loading = false;
+
+  onSubmit() {
+    this.loading = true;
+    // Ton code ici...
+  }
 }
