@@ -2,8 +2,10 @@
 package com.ensemble.service;
 
 import com.ensemble.model.Event;
+import com.ensemble.model.User;
 import com.ensemble.repository.EventRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -26,5 +28,16 @@ public class EventService {
 
     public void delete(Long id) {
         repository.deleteById(id);
+    }
+
+    @Transactional
+    public void participate(Long eventId, User user) {
+        Event event = repository.findById(eventId)
+                .orElseThrow(() -> new RuntimeException("Événement introuvable"));
+
+        if (!event.getParticipants().contains(user)) {
+            event.getParticipants().add(user);
+            repository.save(event);
+        }
     }
 }

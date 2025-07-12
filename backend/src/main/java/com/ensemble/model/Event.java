@@ -4,6 +4,8 @@ package com.ensemble.model;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 public class Event {
@@ -18,6 +20,9 @@ public class Event {
     @ManyToOne
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private User organizer;
+
+    @ManyToMany
+    private List<User> participants = new ArrayList<>();
 
     public Event() {
         // requis par JPA
@@ -44,4 +49,12 @@ public class Event {
     public void setDate(LocalDate date) { this.date = date; }
     public User getOrganizer() { return organizer; }
     public void setOrganizer(User organizer) { this.organizer = organizer; }
+
+    public List<User> getParticipants() {
+        return participants;
+    }
+
+    public void setParticipants(List<User> participants) {
+        this.participants = participants;
+    }
 }

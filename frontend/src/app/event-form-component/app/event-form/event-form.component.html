@@ -3,7 +3,7 @@
     <h2 class="h5 mb-0">Créer un événement</h2>
   </div>
   <div class="card-body mx-auto px-3 py-4" style="max-width: 600px;">
-    <form (ngSubmit)="submitForm()">
+    <form (ngSubmit)="submitForm()" autocomplete="off">
       <div class="mb-4">
         <label class="form-label">Titre :</label>
         <input class="form-control mb-3" [(ngModel)]="event.title" name="title" required /><br />

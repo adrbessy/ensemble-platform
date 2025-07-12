@@ -7,6 +7,9 @@ import com.ensemble.model.User;
 import com.ensemble.repository.UserRepository;
 import com.ensemble.service.EventService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -41,4 +44,19 @@ public class EventController {
     public void delete(@PathVariable Long id) {
         service.delete(id);
     }
+
+    @PostMapping("/{id}/participate")
+    public ResponseEntity<Void> participate(@PathVariable Long id) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String email = auth.getName(); // ou username selon ton token
+
+        System.out.println("Email connecté : " + email); // <-- ICI
+
+        User user = userRepo.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Utilisateur connecté non trouvé"));
+
+        service.participate(id, user);
+        return ResponseEntity.ok().build();
+    }
+
 }

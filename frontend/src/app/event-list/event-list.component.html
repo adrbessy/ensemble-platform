@@ -12,6 +12,18 @@
         <p *ngIf="event.organizer" class="mb-0 mt-auto">
           👤 <strong>{{ event.organizer.username }}</strong>
         </p>
+                <!-- Bouton de participation -->
+        <button
+          *ngIf="!hasUserParticipated(event)"
+          class="btn btn-outline-primary mt-2"
+          (click)="participate(event)"
+        >
+          Participer
+        </button>
+
+        <span *ngIf="hasUserParticipated(event)" class="badge bg-success mt-2">
+          Déjà inscrit
+        </span>
       </div>
     </div>
   </div>

@@ -3,6 +3,9 @@
   <h1 class="m-0">Plateforme Événementielle</h1>
 </div>
 <div class="container mt-5">
-  <app-event-form class="mb-4"></app-event-form>
-  <app-event-list></app-event-list>
+  <app-login *ngIf="!isLoggedIn()" class="mb-4"></app-login>
+  <ng-container *ngIf="isLoggedIn()">
+    <app-event-form class="mb-4"></app-event-form>
+    <app-event-list></app-event-list>
+  </ng-container>
 </div>

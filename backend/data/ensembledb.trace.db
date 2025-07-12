@@ -320,3 +320,10 @@ Wrong user name or password [28000-224]
 org.h2.jdbc.JdbcSQLSyntaxErrorException: Erreur de syntaxe dans l'instruction SQL "SELECT * FROM [*]user WHERE email = 'ton@email.com'"; attendu "identifier"
 Syntax error in SQL statement "SELECT * FROM [*]user WHERE email = 'ton@email.com'"; expected "identifier"; SQL statement:
 SELECT * FROM user WHERE email = 'ton@email.com' [42001-224]
+2025-07-11 23:44:59.952774+02:00 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLNonTransientException: L'objet est déjà fermé
+The object is already closed [90007-224]
+2025-07-12 08:23:34.736357+02:00 jdbc[13]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Erreur de syntaxe dans l'instruction SQL "SELECT * FROM [*]USER WHERE ID = 1"; attendu "identifier"
+Syntax error in SQL statement "SELECT * FROM [*]USER WHERE ID = 1"; expected "identifier"; SQL statement:
+SELECT * FROM USER WHERE ID = 1 [42001-224]
