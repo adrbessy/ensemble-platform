@@ -12,7 +12,6 @@ public class Event {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
     private String title;
     private String description;
     private String location;
@@ -20,7 +19,6 @@ public class Event {
     @ManyToOne
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private User organizer;
-
     @ManyToMany
     private List<User> participants = new ArrayList<>();
 

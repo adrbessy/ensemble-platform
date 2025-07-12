@@ -2,28 +2,28 @@
 <div class="row g-4">
   <div *ngFor="let event of events" class="col-12 col-sm-6 col-lg-4 mb-4">
     <div class="card h-100 shadow-sm d-flex flex-column">
-      <div class="card-body">
-        <h5 class="card-title">{{ event.title }}</h5>
+      <div class="card-body p-3">
+        <h5 class="card-title text-truncate" title="{{ event.title }}">{{ event.title }}</h5>
         <h6 class="card-subtitle mb-2 text-muted">
           <i class="bi bi-calendar-event"></i> {{ event.date }} |
 <i class="bi bi-geo-alt"></i> {{ event.location }}
         </h6>
-        <p class="card-text">{{ event.description }}</p>
+        <p class="card-text text-truncate" title="{{ event.description }}">{{ event.description }}</p>
         <p *ngIf="event.organizer" class="mb-0 mt-auto">
           👤 <strong>{{ event.organizer.username }}</strong>
         </p>
                 <!-- Bouton de participation -->
-        <button
-          *ngIf="!hasUserParticipated(event)"
-          class="btn btn-outline-primary mt-2"
-          (click)="participate(event)"
-        >
-          Participer
-        </button>
+        <div class="mt-auto" *ngIf="!hasUserParticipated(event)">
+          <button class="btn btn-outline-primary mt-2" (click)="participate(event)">
+            Participer
+          </button>
+        </div>
 
-        <span *ngIf="hasUserParticipated(event)" class="badge bg-success mt-2">
-          Déjà inscrit
-        </span>
+        <div class="mt-auto">
+          <span *ngIf="hasUserParticipated(event)" class="badge bg-success mt-2">
+            Déjà inscrit
+          </span>
+        </div>
       </div>
     </div>
   </div>

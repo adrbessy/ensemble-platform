@@ -5,3 +5,10 @@
 .card-subtitle {
   font-size: 0.9rem;
 }
+
+.card-text {
+  display: -webkit-box;
+  -webkit-line-clamp: 2; 
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}

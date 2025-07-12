@@ -327,3 +327,24 @@ The object is already closed [90007-224]
 org.h2.jdbc.JdbcSQLSyntaxErrorException: Erreur de syntaxe dans l'instruction SQL "SELECT * FROM [*]USER WHERE ID = 1"; attendu "identifier"
 Syntax error in SQL statement "SELECT * FROM [*]USER WHERE ID = 1"; expected "identifier"; SQL statement:
 SELECT * FROM USER WHERE ID = 1 [42001-224]
+2025-07-12 20:27:52.197139+02:00 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLNonTransientException: L'objet est déjà fermé
+The object is already closed [90007-224]
+2025-07-12 22:59:00.662346+02:00 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLNonTransientException: L'objet est déjà fermé
+The object is already closed [90007-224]
+2025-07-12 23:27:04.328826+02:00 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLNonTransientException: L'objet est déjà fermé
+The object is already closed [90007-224]
+2025-07-12 23:31:26.232103+02:00 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLNonTransientException: L'objet est déjà fermé
+The object is already closed [90007-224]
+2025-07-12 23:34:05.841424+02:00 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLNonTransientException: L'objet est déjà fermé
+The object is already closed [90007-224]
+2025-07-12 23:34:49.383491+02:00 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLNonTransientException: L'objet est déjà fermé
+The object is already closed [90007-224]
+2025-07-12 23:36:28.618213+02:00 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLNonTransientException: L'objet est déjà fermé
+The object is already closed [90007-224]

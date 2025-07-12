@@ -12,13 +12,13 @@ public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
     private String username;
-
     @Column(unique = true)
     private String email;
-
     private String password;
+
+    @Column(nullable = true) // temporairement
+    private String firstName;
 
     @OneToMany(mappedBy = "organizer")
     @JsonBackReference // pour éviter les boucles infinies
@@ -76,5 +76,13 @@ public class User {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public String getFirstName() {
+        return firstName;
+    }
+
+    public void setFirstName(String firstName) {
+        this.firstName = firstName;
     }
 }

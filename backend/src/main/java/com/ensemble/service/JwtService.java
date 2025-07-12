@@ -1,10 +1,14 @@
 package com.ensemble.service;
 
+import com.ensemble.model.User;
+import com.ensemble.repository.UserRepository;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.security.Key;
@@ -15,12 +19,18 @@ import java.util.function.Function;
 public class JwtService {
 
     private static final String SECRET = "zPe1TyqH43vx2JfKYe8NdH7LcAQr8Vmw"; // min 256 bits (32 chars)
-
     private static final Key key = Keys.hmacShaKeyFor(SECRET.getBytes(StandardCharsets.UTF_8));
 
+    @Autowired
+    private UserRepository userRepository;
+
     public String generateToken(UserDetails userDetails) {
+        User user = userRepository.findByEmail(userDetails.getUsername())
+                .orElseThrow(() -> new UsernameNotFoundException("Utilisateur non trouvé"));
+
         return Jwts.builder()
-                .setSubject(userDetails.getUsername())
+                .setSubject(user.getEmail()) // ou userDetails.getUsername()
+                .claim("id", user.getId())   // ✅ ici tu ajoutes l'id
                 .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
     }

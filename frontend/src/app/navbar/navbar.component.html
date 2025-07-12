@@ -1,0 +1,14 @@
+<nav class="navbar navbar-expand navbar-light bg-light mb-3">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="#">Ensemble</a>
+    
+    <div class="d-flex">
+      <a class="nav-link" *ngIf="!isLoggedIn()" routerLink="/login">Se connecter</a>
+      <a routerLink="/signup" *ngIf="!isLoggedIn()" class="nav-link">S'inscrire</a>
+        <span class="navbar-text me-3 text-primary" *ngIf="isLoggedIn()">
+            Connecté en tant que <strong>{{ getDisplayName() }}</strong>
+        </span>
+      <button class="btn btn-outline-danger" *ngIf="isLoggedIn()" (click)="logout()">Se déconnecter</button>
+    </div>
+  </div>
+</nav>

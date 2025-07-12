@@ -1,0 +1,16 @@
+<h2>Inscription</h2>
+<form (ngSubmit)="register()" #signupForm="ngForm">
+  <div class="mb-3">
+    <label>Email</label>
+    <input type="email" class="form-control" required [(ngModel)]="email" name="email">
+  </div>
+  <div class="mb-3">
+    <label>Prénom</label>
+    <input type="text" class="form-control" required [(ngModel)]="firstName" name="firstName">
+  </div>
+  <div class="mb-3">
+    <label>Mot de passe</label>
+    <input type="password" class="form-control" required [(ngModel)]="password" name="password">
+  </div>
+  <button class="btn btn-primary" type="submit">S'inscrire</button>
+</form>
