@@ -24,20 +24,7 @@
         <input class="form-control mb-3" type="date" [(ngModel)]="event.date" name="date" required /><br />
       </div>
 
-      <div class="mb-4">
-        <label class="form-label">Organisateur :</label>
-        <select [(ngModel)]="event.organizerId"
-          name="organizerId"
-          required
-          (change)="logSelection()">
-          <option [ngValue]="null" disabled selected hidden>-- Sélectionnez un organisateur --</option>
-          <option *ngFor="let user of users" [ngValue]="user.id">
-            {{ user.username }}
-          </option>
-        </select>
-      </div>
-
-      <button type="submit" class="btn btn-primary w-100 mt-2" [disabled]="loading || !event.organizerId">
+      <button type="submit" class="btn btn-primary w-100 mt-2" [disabled]="loading">
         <span *ngIf="!loading">Créer</span>
         <span *ngIf="loading" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
       </button>

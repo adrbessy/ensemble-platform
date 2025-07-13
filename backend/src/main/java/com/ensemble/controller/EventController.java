@@ -35,7 +35,9 @@ public class EventController {
 
     @PostMapping
     public Event create(@RequestBody EventDTO dto) {
-        User user = userRepo.findById(dto.organizerId).orElseThrow();
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String email = auth.getName();
+        User user = userRepo.findByEmail(email).orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
         Event event = new Event(dto.title, dto.description, dto.location, dto.date, user);
         return service.save(event);
     }

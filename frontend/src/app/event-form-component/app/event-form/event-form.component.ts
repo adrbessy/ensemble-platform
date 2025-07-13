@@ -1,6 +1,8 @@
 import { Component } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { EventService } from 'src/app/event.service';
+import { MessageService } from 'src/app/message.service';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-event-form',
@@ -11,14 +13,13 @@ export class EventFormComponent {
     title: '',
     description: '',
     location: '',
-    date: '',
-    organizerId: null
+    date: ''
   };
 
   users: any[] = []; // <--- ici
   successMessage = false;
 
-  constructor(private http: HttpClient, private eventService: EventService) {}
+  constructor(private http: HttpClient, private eventService: EventService, private router: Router, private messageService: MessageService) {}
 
   ngOnInit() {
     this.http.get<any[]>('http://localhost:8080/api/users')
@@ -29,15 +30,14 @@ export class EventFormComponent {
   }
 
   submitForm() {
-    console.log("Valeur sélectionnée :", this.event.organizerId);
-    if (this.event.organizerId == null) {
-      alert('Veuillez sélectionner un organisateur');
-      return;
-    }
     this.http.post('http://localhost:8080/api/events', this.event)
       .subscribe({
         next: () => {
-          alert('Événement créé avec succès !');
+        // ✅ Affiche le message
+        this.messageService.showMessage('Événement créé avec succès !');
+
+        // ✅ Redirige vers la liste des événements
+        this.router.navigate(['/events']);
 
           // 👉 Notifie les autres composants (comme event-list) de recharger
           this.eventService.notifyEventCreated();
@@ -47,8 +47,7 @@ export class EventFormComponent {
             title: '',
             description: '',
             location: '',
-            date: '',
-            organizerId: null
+            date: ''
           };
         },
         error: err => {
@@ -58,10 +57,6 @@ export class EventFormComponent {
       });
       this.successMessage = true;
       setTimeout(() => this.successMessage = false, 3000);
-  }
-
-  logSelection() {
-    console.log('Sélectionné : ', this.event.organizerId);
   }
 
   loading = false;

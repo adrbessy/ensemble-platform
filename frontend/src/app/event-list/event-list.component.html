@@ -12,6 +12,25 @@
         <p *ngIf="event.organizer" class="mb-0 mt-auto">
           👤 <strong>{{ event.organizer.username }}</strong>
         </p>
+
+        <!-- 👉 Ajouter ici : Liste des participants -->
+        <div class="mt-2">
+          <small class="text-muted">Participants :</small>
+          <div *ngIf="event.participants && event.participants.length > 0; else noParticipants">
+            <span *ngFor="let p of event.participants">
+              <span *ngIf="p.id === currentUserId" class="badge bg-primary me-1">
+                {{ p.username }} (toi)
+              </span>
+              <span *ngIf="p.id !== currentUserId" class="badge bg-secondary me-1">
+                {{ p.username }}
+              </span>
+            </span>
+          </div>
+          <ng-template #noParticipants>
+            <small>Aucun participant</small>
+          </ng-template>
+        </div>
+
                 <!-- Bouton de participation -->
         <div class="mt-auto" *ngIf="!hasUserParticipated(event)">
           <button class="btn btn-outline-primary mt-2" (click)="participate(event)">

@@ -20,6 +20,7 @@ public class Event {
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private User organizer;
     @ManyToMany
+    @JsonIgnoreProperties({"events"}) // pour éviter les boucles infinies si l'entité User a une liste d'événements
     private List<User> participants = new ArrayList<>();
 
     public Event() {
