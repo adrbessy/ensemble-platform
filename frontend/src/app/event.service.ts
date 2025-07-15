@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Subject } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
+import { environment } from 'src/environments/environment';
 
 @Injectable({
   providedIn: 'root'
@@ -22,14 +23,14 @@ export class EventService {
       Authorization: `Bearer ${token}`
     };
     return this.http.post(
-      `/api/events/${eventId}/participate`,
+      `${environment.apiUrl}/api/events/${eventId}/participate`,
       {},
       { headers }
     );
   }
 
   withdrawParticipation(eventId: number) {
-    return this.http.delete(`/api/events/${eventId}/participants`);
+    return this.http.delete(`${environment.apiUrl}/api/events/${eventId}/participants`);
   }
 
 }

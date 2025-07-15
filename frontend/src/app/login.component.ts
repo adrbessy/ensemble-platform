@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { MessageService } from './message.service';
+import { environment } from 'src/environments/environment';
 
 @Component({
   selector: 'app-login',
@@ -19,7 +20,7 @@ export class LoginComponent {
       password: this.password
     };
 
-    this.http.post<any>('/api/auth/login', credentials)
+    this.http.post<any>(`${environment.apiUrl}/api/auth/login`, credentials)
       .subscribe({
         next: (response) => {
             localStorage.setItem('token', response.token);

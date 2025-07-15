@@ -1,9 +1,8 @@
 <h2 class="mb-4">Événements à venir</h2>
 
-<!-- 🔽 Le bloc de filtres ici -->
+<!-- 🧩 Bloc de filtres -->
 <div *ngIf="showFilters" class="card mb-3 p-3">
   <h5>Filtres</h5>
-
   <div class="form-check">
     <input
       type="checkbox"
@@ -11,68 +10,71 @@
       [(ngModel)]="onlyWithRemainingSpots"
       (change)="applyFilters()"
       id="remainingSpotsCheck"
-    >
+    />
     <label class="form-check-label" for="remainingSpotsCheck">
       Uniquement les événements avec des places restantes
     </label>
   </div>
-
-  <!-- Ajoute ici d'autres filtres si besoin -->
 </div>
 
-<div class="row g-4">
-  <div *ngFor="let event of events" class="col-12 col-sm-6 col-lg-4 mb-4">
-    <div class="card h-100 shadow-sm d-flex flex-column">
-      <div class="card-body p-3">
-        <h5 class="card-title text-truncate" title="{{ event.title }}">{{ event.title }}</h5>
-        <h6 class="card-subtitle mb-2 text-muted">
-          <i class="bi bi-calendar-event"></i> {{ event.date }} |
-<i class="bi bi-geo-alt"></i> {{ event.location }}
-        </h6>
-        <p class="card-text text-truncate" title="{{ event.description }}">{{ event.description }}</p>
-        <p *ngIf="event.organizer" class="mb-0 mt-auto">
-          👤 <strong>{{ event.organizer.username }}</strong>
-        </p>
-
-        <small class="text-muted">
-          {{ event.participants?.length || 0 }} inscrit{{ event.participants?.length === 1 ? '' : 's' }}
-        </small>
-
-        <!-- 👉 Ajouter ici : Liste des participants -->
-        <div class="mt-2">
-          <small class="text-muted">Participants :</small>
-          <div *ngIf="event.participants && event.participants.length > 0; else noParticipants">
-            <ng-container *ngFor="let p of event.participants">
-              <span
-                class="badge me-1"
-                [ngClass]="p.id === currentUserId ? 'bg-primary' : 'bg-secondary'"
-              >
-                {{ p.username }} <span *ngIf="p.id === currentUserId">(toi)</span>
-              </span>
-            </ng-container>
+<!-- 📦 Container -->
+<div class="container-xl mt-4" style="max-width: 1200px;">
+  <div class="row g-3">
+    <div *ngFor="let event of events" class="col-12 col-sm-6 col-lg-4">
+      
+      <!-- 🧱 Carte complète -->
+      <div class="card h-100 d-flex flex-column">
+        <div class="card-body flex-grow-1 d-flex flex-column justify-content-between">
+          
+          <div>
+            <h5 class="card-title text-truncate" [title]="event.title">{{ event.title }}</h5>
+            <h6 class="card-subtitle mb-2 text-muted">
+              📅 {{ event.date }} |
+              📍 {{ event.location }}
+            </h6>
+            <p class="card-text text-truncate" title="{{ event.description }}">
+              {{ event.description }}
+            </p>
+            <p>
+              👤 <strong>{{ event.organizer.username }}</strong>
+            </p>
+            <small class="text-muted">
+              {{ event.participants?.length || 0 }} inscrit{{ event.participants?.length === 1 ? '' : 's' }}
+            </small>
           </div>
-          <ng-template #noParticipants>
-            <small>Aucun participant</small>
-          </ng-template>
+
+          <!-- 👥 Participants -->
+          <div class="mt-2">
+            <small class="text-muted">Participants :</small>
+            <div *ngIf="event.participants && event.participants.length > 0; else noParticipants">
+              <ng-container *ngFor="let p of event.participants">
+                <span class="badge me-1"
+                      [ngClass]="p.id === currentUserId ? 'bg-primary' : 'bg-secondary'">
+                  {{ p.username }}
+                </span>
+              </ng-container>
+            </div>
+            <ng-template #noParticipants>
+              <small>Aucun participant</small>
+            </ng-template>
+          </div>
         </div>
 
-       <!-- Boutons de participation / désinscription -->
-        <div class="mt-auto">
-          <button 
-            *ngIf="!hasUserParticipated(event)" 
-            class="btn btn-outline-primary mt-2" 
-            (click)="participate(event)">
+        <!-- 🎯 Boutons bas de carte -->
+        <div class="card-footer mt-auto text-end">
+          <button *ngIf="!hasUserParticipated(event)"
+                  class="btn btn-outline-primary w-100"
+                  (click)="participate(event)">
             Participer
           </button>
-
-          <button 
-            *ngIf="hasUserParticipated(event)" 
-            class="btn btn-outline-danger mt-2" 
-            (click)="withdraw(event)">
+          <button *ngIf="hasUserParticipated(event)"
+                  class="btn btn-outline-danger w-100"
+                  (click)="withdraw(event)">
             Se désinscrire
           </button>
         </div>
       </div>
+
     </div>
   </div>
 </div>

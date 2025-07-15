@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { EventService } from 'src/app/event.service';
 import { MessageService } from 'src/app/message.service';
 import { Router } from '@angular/router';
+import { environment } from 'src/environments/environment';
 
 @Component({
   selector: 'app-event-form',
@@ -22,7 +23,7 @@ export class EventFormComponent {
   constructor(private http: HttpClient, private eventService: EventService, private router: Router, private messageService: MessageService) {}
 
   ngOnInit() {
-    this.http.get<any[]>('/api/users')
+    this.http.get<any[]>(`${environment.apiUrl}/api/users`)
       .subscribe(data => {
         console.log('Utilisateurs récupérés :', data);
         this.users = data;
@@ -30,7 +31,7 @@ export class EventFormComponent {
   }
 
   submitForm() {
-    this.http.post('/api/events', this.event)
+    this.http.post(`${environment.apiUrl}/api/events`, this.event)
       .subscribe({
         next: () => {
         // ✅ Affiche le message

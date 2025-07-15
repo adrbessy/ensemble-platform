@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { MessageService } from '../message.service';
+import { environment } from 'src/environments/environment';
 
 @Component({
   selector: 'app-signup',
@@ -25,7 +26,7 @@ export class SignupComponent {
       password: this.password
     };
 
-    this.http.post('/api/auth/register', user)
+    this.http.post(`${environment.apiUrl}/api/auth/register`, user)
       .subscribe({
         next: () => {
           this.messageService.showMessage('Inscription réussie !');

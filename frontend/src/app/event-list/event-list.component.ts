@@ -6,6 +6,7 @@ import { AuthService } from '../auth.service';
 import { Input } from '@angular/core';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { ConfirmModalComponent } from '../confirm-modal/confirm-modal.component';
+import { environment } from 'src/environments/environment';
 
 @Component({
   selector: 'app-event-list',
@@ -30,7 +31,7 @@ export class EventListComponent implements OnInit {
   }
 
   loadEvents() {
-    this.http.get<any[]>('/api/events')
+    this.http.get<any[]>(`${environment.apiUrl}/api/events`)
       .subscribe(data => this.events = data);
   }
 
