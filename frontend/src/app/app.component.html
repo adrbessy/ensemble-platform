@@ -1,4 +1,5 @@
-<app-navbar></app-navbar>
+<app-navbar (toggleFiltersPanel)="toggleFilters()"></app-navbar>
+
 <div *ngIf="messageService.message$ | async as msg" class="alert alert-info text-center">
   {{ msg }}
 </div>

@@ -22,7 +22,7 @@ export class EventFormComponent {
   constructor(private http: HttpClient, private eventService: EventService, private router: Router, private messageService: MessageService) {}
 
   ngOnInit() {
-    this.http.get<any[]>('http://localhost:8080/api/users')
+    this.http.get<any[]>('/api/users')
       .subscribe(data => {
         console.log('Utilisateurs récupérés :', data);
         this.users = data;
@@ -30,7 +30,7 @@ export class EventFormComponent {
   }
 
   submitForm() {
-    this.http.post('http://localhost:8080/api/events', this.event)
+    this.http.post('/api/events', this.event)
       .subscribe({
         next: () => {
         // ✅ Affiche le message

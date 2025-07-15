@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, EventEmitter, Output } from '@angular/core';
 import { AuthService } from '../auth.service';
 
 @Component({
@@ -7,6 +7,8 @@ import { AuthService } from '../auth.service';
 })
 export class NavbarComponent {
   constructor(private authService: AuthService) {}
+
+  @Output() toggleFiltersPanel = new EventEmitter<void>();
 
   isLoggedIn(): boolean {
     return this.authService.isLoggedIn();
@@ -22,5 +24,9 @@ export class NavbarComponent {
 
   getDisplayName(): string | null {
     return this.authService.getDisplayName();
+  }
+
+  toggleFilters() {
+    this.toggleFiltersPanel.emit();
   }
 }

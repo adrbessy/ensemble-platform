@@ -7,11 +7,12 @@ import { SignupComponent } from './signup/signup.component';
 import { EventFormComponent } from './event-form-component/app/event-form/event-form.component';
 
 const routes: Routes = [
-  { path: 'events', component: EventListComponent, canActivate: [AuthGuard] },
+  { path: '', component: EventListComponent }, // Page d'accueil avec filtres
   { path: 'login', component: LoginComponent },
-  { path: '', redirectTo: 'events', pathMatch: 'full' },
   { path: 'signup', component: SignupComponent },
-  { path: 'create-event', component: EventFormComponent, canActivate: [AuthGuard] }
+  { path: 'create-event', component: EventFormComponent },
+  // Redirection pour toute autre URL
+  { path: '**', redirectTo: '', pathMatch: 'full' }
 ];
 
 @NgModule({

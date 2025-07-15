@@ -1,0 +1,3 @@
+com\ensemble\security\JwtAuthFilterTest.class
+com\ensemble\service\AuthServiceTest.class
+com\ensemble\service\UserDetailsServiceImplTest.class

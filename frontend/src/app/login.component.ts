@@ -19,7 +19,7 @@ export class LoginComponent {
       password: this.password
     };
 
-    this.http.post<any>('http://localhost:8080/api/auth/login', credentials)
+    this.http.post<any>('/api/auth/login', credentials)
       .subscribe({
         next: (response) => {
             localStorage.setItem('token', response.token);

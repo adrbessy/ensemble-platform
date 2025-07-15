@@ -25,7 +25,7 @@ export class SignupComponent {
       password: this.password
     };
 
-    this.http.post('http://localhost:8080/api/auth/register', user)
+    this.http.post('/api/auth/register', user)
       .subscribe({
         next: () => {
           this.messageService.showMessage('Inscription réussie !');

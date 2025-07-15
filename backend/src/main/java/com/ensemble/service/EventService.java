@@ -12,32 +12,41 @@ import java.util.List;
 @Service
 public class EventService {
 
-    private final EventRepository repository;
+    private final EventRepository eventRepository;
 
     public EventService(EventRepository repository) {
-        this.repository = repository;
+        this.eventRepository = repository;
     }
 
     public List<Event> findAll() {
-        return repository.findAll();
+        return eventRepository.findAll();
     }
 
     public Event save(Event event) {
-        return repository.save(event);
+        return eventRepository.save(event);
     }
 
     public void delete(Long id) {
-        repository.deleteById(id);
+        eventRepository.deleteById(id);
     }
 
     @Transactional
     public void participate(Long eventId, User user) {
-        Event event = repository.findById(eventId)
+        Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new RuntimeException("Événement introuvable"));
 
         if (!event.getParticipants().contains(user)) {
             event.getParticipants().add(user);
-            repository.save(event);
+            eventRepository.save(event);
         }
+    }
+
+    public void withdrawParticipant(Long eventId, Long userId) {
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new RuntimeException("Événement non trouvé"));
+
+        event.getParticipants().removeIf(user -> user.getId().equals(userId));
+
+        eventRepository.save(event);
     }
 }

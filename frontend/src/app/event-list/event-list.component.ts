@@ -2,6 +2,10 @@
 import { Component, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { EventService } from '../event.service';
+import { AuthService } from '../auth.service';
+import { Input } from '@angular/core';
+import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
+import { ConfirmModalComponent } from '../confirm-modal/confirm-modal.component';
 
 @Component({
   selector: 'app-event-list',
@@ -9,20 +13,24 @@ import { EventService } from '../event.service';
 })
 export class EventListComponent implements OnInit {
   events: any[] = [];
-  currentUserId: number = 38; // à remplacer dynamiquement plus tard
+  currentUserId: number;
+  onlyWithRemainingSpots = true;
+  @Input() showFilters: boolean = false;
 
-  constructor(private http: HttpClient, private eventService: EventService) {}
+  constructor(private http: HttpClient, private eventService: EventService, private authService: AuthService, private modalService: NgbModal) {
+    this.currentUserId = this.authService.getCurrentUserId();
+  }
 
   ngOnInit(): void {
     this.loadEvents();
-
+    this.currentUserId = this.authService.getCurrentUserId();
     this.eventService.refreshEvents$.subscribe(() => {
       this.loadEvents();
     });
   }
 
   loadEvents() {
-    this.http.get<any[]>('http://localhost:8080/api/events')
+    this.http.get<any[]>('/api/events')
       .subscribe(data => this.events = data);
   }
 
@@ -42,4 +50,38 @@ export class EventListComponent implements OnInit {
         }
       });
   }
+
+  withdraw(event: any): void {
+    const modalRef = this.modalService.open(ConfirmModalComponent);
+    modalRef.componentInstance.title = "Désinscription";
+    modalRef.componentInstance.message = "Souhaites-tu vraiment te désinscrire de cet événement ?";
+
+    modalRef.result.then(
+      (result) => {
+        if (result === true) {
+          this.eventService.withdrawParticipation(event.id).subscribe({
+            next: () => {
+              // Mise à jour locale après désinscription
+              event.participants = event.participants.filter((user: any) => user.id !== this.currentUserId);
+            },
+            error: err => {
+              console.error('Erreur lors de la désinscription :', err);
+            }
+          });
+        }
+      },
+      () => {
+        // Fermeture sans confirmation (fermé ou annulé)
+      }
+    );
+  }
+
+  applyFilters() {
+    this.loadEvents(); // ou une version filtrée selon `onlyWithRemainingSpots`
+  }
+
+  toggleFiltersPanel() {
+    this.showFilters = !this.showFilters;
+  }
+
 }

@@ -12,10 +12,12 @@ import { NavbarComponent } from './navbar/navbar.component';
 import { SignupComponent } from './signup/signup.component';
 import { HTTP_INTERCEPTORS } from '@angular/common/http';
 import { AuthInterceptor } from './interceptors/auth.interceptor';
+import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
+import { ConfirmModalComponent } from './confirm-modal/confirm-modal.component';
 
 @NgModule({
-  declarations: [EventFormComponent, AppComponent, EventListComponent, LoginComponent, NavbarComponent, SignupComponent],
-  imports: [BrowserModule, HttpClientModule, FormsModule, AppRoutingModule],
+  declarations: [EventFormComponent, AppComponent, EventListComponent, LoginComponent, NavbarComponent, SignupComponent, ConfirmModalComponent],
+  imports: [BrowserModule, HttpClientModule, FormsModule, AppRoutingModule, NgbModule],
   providers: [  {
     provide: HTTP_INTERCEPTORS,
     useClass: AuthInterceptor,

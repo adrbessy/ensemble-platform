@@ -5,7 +5,9 @@ import com.ensemble.dto.EventDTO;
 import com.ensemble.model.Event;
 import com.ensemble.model.User;
 import com.ensemble.repository.UserRepository;
+import com.ensemble.service.AuthService;
 import com.ensemble.service.EventService;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -18,19 +20,19 @@ import java.util.List;
 @RequestMapping("/api/events")
 @CrossOrigin(origins = "*")
 public class EventController {
-
-    private final EventService service;
+    private final EventService eventService;
     @Autowired
     private final UserRepository userRepo;
-
-    public EventController(EventService service, UserRepository userRepo) {
-        this.service = service;
+    private final AuthService authService;
+    public EventController(EventService service, UserRepository userRepo, AuthService authService) {
+        this.eventService = service;
         this.userRepo = userRepo;
+        this.authService = authService;
     }
 
     @GetMapping
     public List<Event> getAll() {
-        return service.findAll();
+        return eventService.findAll();
     }
 
     @PostMapping
@@ -39,12 +41,13 @@ public class EventController {
         String email = auth.getName();
         User user = userRepo.findByEmail(email).orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
         Event event = new Event(dto.title, dto.description, dto.location, dto.date, user);
-        return service.save(event);
+        event.getParticipants().add(user); // L'organisateur est aussi inscrit
+        return eventService.save(event);
     }
 
     @DeleteMapping("/{id}")
     public void delete(@PathVariable Long id) {
-        service.delete(id);
+        eventService.delete(id);
     }
 
     @PostMapping("/{id}/participate")
@@ -57,7 +60,14 @@ public class EventController {
         User user = userRepo.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Utilisateur connecté non trouvé"));
 
-        service.participate(id, user);
+        eventService.participate(id, user);
+        return ResponseEntity.ok().build();
+    }
+
+    @DeleteMapping("/{eventId}/participants")
+    public ResponseEntity<?> withdraw(@PathVariable Long eventId, HttpServletRequest request) {
+        Long userId = authService.getUserIdFromRequest(request);
+        eventService.withdrawParticipant(eventId, userId);
         return ResponseEntity.ok().build();
     }
 

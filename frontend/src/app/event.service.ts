@@ -22,9 +22,14 @@ export class EventService {
       Authorization: `Bearer ${token}`
     };
     return this.http.post(
-      `http://localhost:8080/api/events/${eventId}/participate`,
+      `/api/events/${eventId}/participate`,
       {},
       { headers }
     );
   }
+
+  withdrawParticipation(eventId: number) {
+    return this.http.delete(`/api/events/${eventId}/participants`);
+  }
+
 }

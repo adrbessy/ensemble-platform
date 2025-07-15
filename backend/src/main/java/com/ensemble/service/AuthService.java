@@ -6,6 +6,9 @@ import com.ensemble.dto.MessageResponse;
 import com.ensemble.dto.RegisterRequest;
 import com.ensemble.model.User;
 import com.ensemble.repository.UserRepository;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpStatus;
@@ -20,20 +23,15 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class AuthService {
-
     @Autowired
     @Lazy
     private AuthenticationManager authenticationManager;
-
     @Autowired
     private JwtService jwtService;
-
     @Autowired
     private PasswordEncoder passwordEncoder; // Tu l’as sûrement déjà
-
     @Autowired
     private UserRepository userRepository;
-
     public AuthResponse login(LoginRequest request) {
         System.out.println("LOGIN ATTEMPT");
         // Pour debug : juste temporairement
@@ -63,7 +61,6 @@ public class AuthService {
                     .status(HttpStatus.CONFLICT)
                     .body("Un utilisateur avec cet email existe déjà.");
         }
-
         // Crée et enregistre le nouvel utilisateur
         User newUser = new User();
         newUser.setEmail(request.getEmail());
@@ -73,8 +70,19 @@ public class AuthService {
         System.out.println("Avant save: " + newUser.getEmail());
         userRepository.save(newUser);
         System.out.println("Après save");
-
         return ResponseEntity.ok(new MessageResponse("Inscription réussie"));
+    }
+
+    public Long getUserIdFromRequest(HttpServletRequest request) {
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String token = authHeader.substring(7); // Supprime "Bearer "
+            String email = jwtService.extractUsername(token);
+            User user = userRepository.findByEmail(email)
+                    .orElseThrow(() -> new UsernameNotFoundException("Utilisateur non trouvé"));
+            return user.getId();
+        }
+        throw new RuntimeException("Token invalide ou manquant");
     }
 
 }

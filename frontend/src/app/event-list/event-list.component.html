@@ -1,4 +1,25 @@
 <h2 class="mb-4">Événements à venir</h2>
+
+<!-- 🔽 Le bloc de filtres ici -->
+<div *ngIf="showFilters" class="card mb-3 p-3">
+  <h5>Filtres</h5>
+
+  <div class="form-check">
+    <input
+      type="checkbox"
+      class="form-check-input"
+      [(ngModel)]="onlyWithRemainingSpots"
+      (change)="applyFilters()"
+      id="remainingSpotsCheck"
+    >
+    <label class="form-check-label" for="remainingSpotsCheck">
+      Uniquement les événements avec des places restantes
+    </label>
+  </div>
+
+  <!-- Ajoute ici d'autres filtres si besoin -->
+</div>
+
 <div class="row g-4">
   <div *ngFor="let event of events" class="col-12 col-sm-6 col-lg-4 mb-4">
     <div class="card h-100 shadow-sm d-flex flex-column">
@@ -13,35 +34,43 @@
           👤 <strong>{{ event.organizer.username }}</strong>
         </p>
 
+        <small class="text-muted">
+          {{ event.participants?.length || 0 }} inscrit{{ event.participants?.length === 1 ? '' : 's' }}
+        </small>
+
         <!-- 👉 Ajouter ici : Liste des participants -->
         <div class="mt-2">
           <small class="text-muted">Participants :</small>
           <div *ngIf="event.participants && event.participants.length > 0; else noParticipants">
-            <span *ngFor="let p of event.participants">
-              <span *ngIf="p.id === currentUserId" class="badge bg-primary me-1">
-                {{ p.username }} (toi)
+            <ng-container *ngFor="let p of event.participants">
+              <span
+                class="badge me-1"
+                [ngClass]="p.id === currentUserId ? 'bg-primary' : 'bg-secondary'"
+              >
+                {{ p.username }} <span *ngIf="p.id === currentUserId">(toi)</span>
               </span>
-              <span *ngIf="p.id !== currentUserId" class="badge bg-secondary me-1">
-                {{ p.username }}
-              </span>
-            </span>
+            </ng-container>
           </div>
           <ng-template #noParticipants>
             <small>Aucun participant</small>
           </ng-template>
         </div>
 
-                <!-- Bouton de participation -->
-        <div class="mt-auto" *ngIf="!hasUserParticipated(event)">
-          <button class="btn btn-outline-primary mt-2" (click)="participate(event)">
+       <!-- Boutons de participation / désinscription -->
+        <div class="mt-auto">
+          <button 
+            *ngIf="!hasUserParticipated(event)" 
+            class="btn btn-outline-primary mt-2" 
+            (click)="participate(event)">
             Participer
           </button>
-        </div>
 
-        <div class="mt-auto">
-          <span *ngIf="hasUserParticipated(event)" class="badge bg-success mt-2">
-            Déjà inscrit
-          </span>
+          <button 
+            *ngIf="hasUserParticipated(event)" 
+            class="btn btn-outline-danger mt-2" 
+            (click)="withdraw(event)">
+            Se désinscrire
+          </button>
         </div>
       </div>
     </div>
