@@ -9,9 +9,9 @@ Ensemble est une plateforme sécurisée et collaborative conçue pour faciliter 
     Événements
 
         Consulter les événements existants 
-        -> Afficher uniquement les événements avec des places restantes.
+        -> Afficher uniquement les événements avec des places restantes (par défaut), afficher les événements exigeant la parité (par défaut).
         -> classés par date avec possibilité de cliquer sur la date pour masquer ou afficher les événements prévus à cette date
-        -> possibilité de filtrer les événements par date, tags, lieux, événements où je suis inscrit.
+        -> possibilité de filtrer les événements par date, tags (jeux de société, bar, randonnée, plage, musée, café, brunch, restaurant, concert, sport), lieux, événements où je suis inscrit.
 
         S’inscrire à des événements
 
