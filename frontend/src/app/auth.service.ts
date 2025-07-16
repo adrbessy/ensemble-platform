@@ -1,7 +1,8 @@
 import { Injectable } from '@angular/core';
 import { Router } from '@angular/router';
 import jwt_decode from 'jwt-decode';
-import { MessageService } from './message.service';
+import { NotificationService } from './services/notification.service';
+import { BehaviorSubject, Observable } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
@@ -9,7 +10,13 @@ import { MessageService } from './message.service';
 export class AuthService {
   private tokenKey = 'token';
 
-  constructor(private messageService: MessageService, private router: Router) {}
+  constructor(private notificationService: NotificationService, private router: Router) {}
+
+  private loggedIn$ = new BehaviorSubject<boolean>(this.isLoggedIn());
+
+  getLoggedIn(): Observable<boolean> {
+    return this.loggedIn$.asObservable();
+  }
 
   getToken(): string | null {
     return localStorage.getItem(this.tokenKey);
@@ -19,11 +26,16 @@ export class AuthService {
     return !!this.getToken();
   }
 
-    logout(): void {
-    localStorage.removeItem(this.tokenKey);
-    this.messageService.showMessage('Déconnexion réussie.');
-    this.router.navigate(['/login']); // redirection Angular
-    }
+  logout(): void {
+  this.loggedIn$.next(false);
+  localStorage.removeItem(this.tokenKey);
+  this.notificationService.info("Déconnexion réussie.");
+  this.router.navigate(['/login']); // redirection Angular
+  }
+
+  setLoggedIn(value: boolean): void {
+    this.loggedIn$.next(value);
+  }
 
   getCurrentUserId(): number | null {
     const token = this.getToken();

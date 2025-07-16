@@ -7,6 +7,7 @@ import { Input } from '@angular/core';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { ConfirmModalComponent } from '../confirm-modal/confirm-modal.component';
 import { environment } from 'src/environments/environment';
+import { NotificationService } from '../services/notification.service';
 
 @Component({
   selector: 'app-event-list',
@@ -18,7 +19,8 @@ export class EventListComponent implements OnInit {
   onlyWithRemainingSpots = true;
   @Input() showFilters: boolean = false;
 
-  constructor(private http: HttpClient, private eventService: EventService, private authService: AuthService, private modalService: NgbModal) {
+  constructor(private http: HttpClient, private eventService: EventService, private authService: AuthService, private modalService: NgbModal,
+  private notificationService: NotificationService) {
     this.currentUserId = this.authService.getCurrentUserId();
   }
 
@@ -40,17 +42,28 @@ export class EventListComponent implements OnInit {
   }
 
   participate(event: any): void {
-    this.eventService.participate(event.id)
-      .subscribe({
-        next: () => {
-          event.participants = event.participants || [];
-          event.participants.push({ id: this.currentUserId }); // Simule localement
-        },
-        error: err => {
-          console.error('Erreur participation :', err);
-        }
-      });
+    if (!this.authService.isLoggedIn()) {
+      this.notificationService.warn("Veuillez vous connecter pour participer.");
+      return;
+    }
+
+    this.eventService.participate(event.id).subscribe({
+      next: () => {
+        // Simulation locale si tu ne veux pas recharger
+        event.participants = event.participants || [];
+        event.participants.push({
+        id: this.currentUserId,
+        username: 'toi',
+        });
+        this.notificationService.success("Inscription réussie !");
+      },
+      error: err => {
+        console.error("Erreur participation :", err);
+        this.notificationService.error("Erreur lors de l'inscription.");
+      }
+    });
   }
+
 
   withdraw(event: any): void {
     const modalRef = this.modalService.open(ConfirmModalComponent);
@@ -64,9 +77,10 @@ export class EventListComponent implements OnInit {
             next: () => {
               // Mise à jour locale après désinscription
               event.participants = event.participants.filter((user: any) => user.id !== this.currentUserId);
+              this.notificationService.success("Désinscription réussie !");
             },
             error: err => {
-              console.error('Erreur lors de la désinscription :', err);
+              this.notificationService.error("Erreur lors de la désinscription.");
             }
           });
         }

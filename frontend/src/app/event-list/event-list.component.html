@@ -50,7 +50,7 @@
               <ng-container *ngFor="let p of event.participants">
                 <span class="badge me-1"
                       [ngClass]="p.id === currentUserId ? 'bg-primary' : 'bg-secondary'">
-                  {{ p.username }}
+                  {{ p.username || 'toi' }}
                 </span>
               </ng-container>
             </div>
@@ -62,14 +62,30 @@
 
         <!-- 🎯 Boutons bas de carte -->
         <div class="card-footer mt-auto text-end">
-          <button *ngIf="!hasUserParticipated(event)"
-                  class="btn btn-outline-primary w-100"
-                  (click)="participate(event)">
+          <!-- Bouton visible uniquement si l'utilisateur est connecté et non inscrit -->
+          <button
+            *ngIf="authService.isLoggedIn() && !hasUserParticipated(event)"
+            class="btn btn-outline-primary w-100"
+            (click)="participate(event)"
+          >
             Participer
           </button>
-          <button *ngIf="hasUserParticipated(event)"
-                  class="btn btn-outline-danger w-100"
-                  (click)="withdraw(event)">
+
+          <!-- Lien visible si l'utilisateur n'est pas connecté -->
+          <a
+            *ngIf="!authService.isLoggedIn()"
+            routerLink="/login"
+            class="btn btn-outline-secondary w-100"
+          >
+            Connecte-toi pour participer
+          </a>
+
+          <!-- Bouton pour se désinscrire si déjà inscrit -->
+          <button
+            *ngIf="authService.isLoggedIn() && hasUserParticipated(event)"
+            class="btn btn-outline-danger w-100"
+            (click)="withdraw(event)"
+          >
             Se désinscrire
           </button>
         </div>

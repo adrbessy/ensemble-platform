@@ -4,6 +4,7 @@ import { EventService } from 'src/app/event.service';
 import { MessageService } from 'src/app/message.service';
 import { Router } from '@angular/router';
 import { environment } from 'src/environments/environment';
+import { NotificationService } from 'src/app/services/notification.service';
 
 @Component({
   selector: 'app-event-form',
@@ -20,7 +21,7 @@ export class EventFormComponent {
   users: any[] = []; // <--- ici
   successMessage = false;
 
-  constructor(private http: HttpClient, private eventService: EventService, private router: Router, private messageService: MessageService) {}
+  constructor(private http: HttpClient, private eventService: EventService, private router: Router, private notificationService: NotificationService) {}
 
   ngOnInit() {
     this.http.get<any[]>(`${environment.apiUrl}/api/users`)
@@ -35,7 +36,7 @@ export class EventFormComponent {
       .subscribe({
         next: () => {
         // ✅ Affiche le message
-        this.messageService.showMessage('Événement créé avec succès !');
+        this.notificationService.success("Événement créé !");
 
         // ✅ Redirige vers la liste des événements
         this.router.navigate(['/events']);
@@ -53,7 +54,7 @@ export class EventFormComponent {
         },
         error: err => {
           console.error(err);
-          alert('Erreur lors de la création de l\'événement');
+          this.notificationService.error("Erreur de création.");
         }
       });
       this.successMessage = true;

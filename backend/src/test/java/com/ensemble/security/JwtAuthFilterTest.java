@@ -23,28 +23,20 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class JwtAuthFilterTest {
-
     @InjectMocks
     private JwtAuthFilter jwtAuthFilter;
-
     @Mock
     private JwtService jwtService;
-
     @Mock
     private UserDetailsService userDetailsService;
-
     @Mock
     private HttpServletRequest request;
-
     @Mock
     private HttpServletResponse response;
-
     @Mock
     private FilterChain filterChain;
-
     @Mock
     private UserDetails userDetails;
-
     @Test
     void shouldAuthenticateUserIfTokenIsValid() throws ServletException, IOException {
         // Given

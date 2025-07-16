@@ -1,4 +1,4 @@
 export const environment = {
   production: false,
-  apiUrl: 'http://localhost:3000' // ton backend local
+  apiUrl: '' // laisse vide pour que les requêtes passent par le proxy
 };

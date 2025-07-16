@@ -10,6 +10,12 @@ export class NavbarComponent {
 
   @Output() toggleFiltersPanel = new EventEmitter<void>();
 
+  isUserLoggedIn: boolean = false;
+
+  ngOnInit(): void {
+    this.isUserLoggedIn = this.authService.isLoggedIn();
+  }
+
   isLoggedIn(): boolean {
     return this.authService.isLoggedIn();
   }

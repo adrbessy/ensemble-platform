@@ -24,7 +24,7 @@
         <span class="navbar-text me-3 text-primary" *ngIf="isLoggedIn()">
             Connecté en tant que <strong>{{ getDisplayName() }}</strong>
         </span>
-      <button type="button" class="btn btn-outline-danger" *ngIf="isLoggedIn()" (click)="logout()">Se déconnecter</button>
+      <button type="button" class="btn btn-outline-danger" *ngIf="isUserLoggedIn" (click)="logout()">Se déconnecter</button>
     </div>
   </div>
 </nav>

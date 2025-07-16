@@ -3,6 +3,8 @@ import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { MessageService } from './message.service';
 import { environment } from 'src/environments/environment';
+import { NotificationService } from './services/notification.service';
+import { AuthService } from './auth.service';
 
 @Component({
   selector: 'app-login',
@@ -12,7 +14,7 @@ export class LoginComponent {
   email = '';
   password = '';
 
-  constructor(private http: HttpClient, private router: Router, private messageService: MessageService) {}
+  constructor(private http: HttpClient, private router: Router, private notificationService: NotificationService, private authService: AuthService) {}
 
   login() {
     const credentials = {
@@ -24,15 +26,15 @@ export class LoginComponent {
       .subscribe({
         next: (response) => {
             localStorage.setItem('token', response.token);
-
+            this.authService.setLoggedIn(true);
             // 👉 Message de confirmation
-            this.messageService.showMessage('Connexion réussie !');
+            this.notificationService.success("Connexion réussie");
 
             // 👉 Redirection vers la liste des événements
             this.router.navigate(['/events']); // ✅ Redirection ici
         },
         error: (err) => {
-            this.messageService.showMessage('Email ou mot de passe incorrect.');
+            this.notificationService.error("Email ou mot de passe incorrect.");
             console.error('Erreur de connexion', err);
         }
       });

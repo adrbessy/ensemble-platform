@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { MessageService } from '../message.service';
 import { environment } from 'src/environments/environment';
+import { NotificationService } from '../services/notification.service';
 
 @Component({
   selector: 'app-signup',
@@ -16,7 +17,7 @@ export class SignupComponent {
   constructor(
     private http: HttpClient,
     private router: Router,
-    private messageService: MessageService
+    private notificationService: NotificationService
   ) {}
 
   register() {
@@ -29,11 +30,11 @@ export class SignupComponent {
     this.http.post(`${environment.apiUrl}/api/auth/register`, user)
       .subscribe({
         next: () => {
-          this.messageService.showMessage('Inscription réussie !');
+          this.notificationService.success("Inscription réussie !");
           this.router.navigate(['/login']);
         },
         error: (err) => {
-          this.messageService.showMessage('Erreur lors de l\'inscription.');
+          this.notificationService.error('Erreur lors de l\'inscription.');
           console.error(err);
         }
       });
