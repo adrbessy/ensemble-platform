@@ -5,17 +5,18 @@ Ensemble est une plateforme sécurisée et collaborative conçue pour faciliter 
 
     Authentification
     Inscription et connexion sécurisées des utilisateurs.
+    Lors de l'inscription, renseigner son prénom, son email et un mot de passe ou connexion via google, préciser son genre (homme ou femme ou autre), sa date de naissance.
 
     Événements
 
         Consulter les événements existants 
         -> Afficher uniquement les événements avec des places restantes (par défaut), afficher les événements exigeant la parité (par défaut).
         -> classés par date avec possibilité de cliquer sur la date pour masquer ou afficher les événements prévus à cette date
-        -> possibilité de filtrer les événements par date, tags (jeux de société, bar, randonnée, plage, musée, café, brunch, restaurant, concert, sport), lieux, événements où je suis inscrit.
+        -> possibilité de filtrer les événements par date, tags (jeux de société, bar, randonnée, plage, musée, café, brunch, restaurant, concert, sport), lieux, événements où je suis inscrit, l'âge des personnes.
 
         S’inscrire à des événements
 
-        Organiser ses propres événements
+        Organiser/créer ses propres événements : Titre, tag, description, lieu, date (jour et heure), nombre de partipants, exigence de la parité ou uniquement femmes, ou uniquement hommes, ou aucun filtre.
 
     Envies spontanées
     Exprimez une envie (ex. : "jouer au loup") sans créer immédiatement un événement.

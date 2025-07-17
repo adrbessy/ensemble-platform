@@ -16,9 +16,11 @@ import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { ConfirmModalComponent } from './confirm-modal/confirm-modal.component';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { ToastrModule } from 'ngx-toastr';
+import { LoaderInterceptor } from './interceptors/loader.interceptor';
+import { LoaderComponent } from './loader/loader.component';
 
 @NgModule({
-  declarations: [EventFormComponent, AppComponent, EventListComponent, LoginComponent, NavbarComponent, SignupComponent, ConfirmModalComponent],
+  declarations: [EventFormComponent, AppComponent, EventListComponent, LoginComponent, NavbarComponent, SignupComponent, ConfirmModalComponent, LoaderComponent],
   imports: [BrowserAnimationsModule, // OBLIGATOIRE pour ngx-toastr
     ToastrModule.forRoot({
       positionClass: 'toast-bottom-right',
@@ -29,6 +31,11 @@ import { ToastrModule } from 'ngx-toastr';
   providers: [  {
     provide: HTTP_INTERCEPTORS,
     useClass: AuthInterceptor,
+    multi: true
+  },
+  {
+    provide: HTTP_INTERCEPTORS,
+    useClass: LoaderInterceptor,
     multi: true
   }],
   bootstrap: [AppComponent]
