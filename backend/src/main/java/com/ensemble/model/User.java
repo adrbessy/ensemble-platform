@@ -2,12 +2,17 @@ package com.ensemble.model;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
+import lombok.Data;
 
+import java.time.LocalDate;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 @Entity
 @Table(name = "users")
+@Data
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -16,9 +21,20 @@ public class User {
     @Column(unique = true)
     private String email;
     private String password;
-
     @Column(nullable = true) // temporairement
     private String firstName;
+
+    private String lastName;
+    private String photoUrl;
+
+    private LocalDate birthdate;
+
+    private String gender;
+
+    private String photoFilename;
+
+    @ManyToMany(mappedBy = "members")
+    private Set<Group> groups = new HashSet<>();
 
     @OneToMany(mappedBy = "organizer")
     @JsonBackReference // pour éviter les boucles infinies
@@ -84,5 +100,13 @@ public class User {
 
     public void setFirstName(String firstName) {
         this.firstName = firstName;
+    }
+
+    public String getPhotoUrl() {
+        return photoUrl;
+    }
+
+    public void setPhotoUrl(String photoUrl) {
+        this.photoUrl = photoUrl;
     }
 }

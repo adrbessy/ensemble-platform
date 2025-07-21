@@ -4,6 +4,7 @@ import com.ensemble.security.JwtAuthFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -36,11 +37,14 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/",
-                                "/api/auth/**",
-                                "/api/events/**",
-                                "/api/users/**",
+                                "/api/auth/login",
+                                "/api/auth/signup",
                                 "/h2-console/**"
                         ).permitAll()
+                        .requestMatchers("/api/events/**").permitAll()
+                        .requestMatchers("/api/groups/**").authenticated()
+                        .requestMatchers("/api/users/**").authenticated()
+
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(sess -> sess
@@ -63,17 +67,17 @@ public class SecurityConfig {
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
+        System.out.println("✅ CorsConfigurationSource bean loaded");
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of(
-                "http://localhost:4200",
-                "https://ensemble-platform-6.onrender.com"
-        ));
+        configuration.setAllowedOriginPatterns(List.of("http://localhost:4200", "https://ensemble-platform-6.onrender.com"));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Requested-With"));
         configuration.setAllowCredentials(true);
+        configuration.setExposedHeaders(List.of("Authorization"));
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;
     }
+
 }

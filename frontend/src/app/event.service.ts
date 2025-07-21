@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Subject } from 'rxjs';
+import { Observable, Subject } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { environment } from 'src/environments/environment';
 
@@ -23,14 +23,18 @@ export class EventService {
       Authorization: `Bearer ${token}`
     };
     return this.http.post(
-      `${environment.apiUrl}/api/events/${eventId}/participate`,
+      `${environment.apiUrl}/events/${eventId}/participate`,
       {},
       { headers }
     );
   }
 
   withdrawParticipation(eventId: number) {
-    return this.http.delete(`${environment.apiUrl}/api/events/${eventId}/participants`);
+    return this.http.delete(`${environment.apiUrl}/events/${eventId}/participants`);
+  }
+
+  getEvents(): Observable<any[]> {
+    return this.http.get<any[]>(`${environment.apiUrl}/events`);
   }
 
 }

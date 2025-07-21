@@ -28,3 +28,6 @@ Thumbs.db
 .DS_Store
 
 backend/data/ensembledb.mv.db
+
+maquettes/
+personnesTest/

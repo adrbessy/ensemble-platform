@@ -8,15 +8,13 @@ export class AuthInterceptor implements HttpInterceptor {
         const token = localStorage.getItem('token');
 
         // Ne pas ajouter le token sur les appels d'auth
-        if (req.url.includes('/auth/login') || req.url.includes('/auth/register')) {
+        if (req.url.includes('/api/auth')) {
             return next.handle(req);
         }
 
         if (token) {
             const cloned = req.clone({
-            setHeaders: {
-                Authorization: `Bearer ${token}`
-            }
+                headers: req.headers.set('Authorization', `Bearer ${token}`)
             });
             return next.handle(cloned);
         }

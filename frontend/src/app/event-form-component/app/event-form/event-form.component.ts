@@ -5,29 +5,62 @@ import { MessageService } from 'src/app/message.service';
 import { Router } from '@angular/router';
 import { environment } from 'src/environments/environment';
 import { NotificationService } from 'src/app/services/notification.service';
+import { GroupService } from 'src/app/services/group.service';
+
+interface EventForm {
+  title: string;
+  description: string;
+  date: string;
+  time?: string;
+  location: string;
+  tag: string; // un seul tag
+  maxParticipants?: number; // ✅
+  genderRequirement?: string; // peut être "Parité", "Mixte", "Homme", "Femme"
+  visibility?: string; // peut être "PUBLIC", "GROUP"
+  groupId?: string | null; // ID du groupe si visibilité est "GROUP"
+}
 
 @Component({
   selector: 'app-event-form',
   templateUrl: './event-form.component.html',
 })
 export class EventFormComponent {
-  event = {
+
+  event: EventForm = {
     title: '',
     description: '',
+    date: '',
     location: '',
-    date: ''
+    tag: '', // valeur vide par défaut
+    maxParticipants: 6, // ✅ valeur par défaut
+    genderRequirement: 'Parité', // ✅ valeur par défaut
+    visibility: 'PUBLIC', // 👈 ajout
+    groupId: null          // 👈 ajout
   };
 
   users: any[] = []; // <--- ici
   successMessage = false;
 
-  constructor(private http: HttpClient, private eventService: EventService, private router: Router, private notificationService: NotificationService) {}
+  availableTags: string[] = [
+    'jeux de société', 'bar', 'randonnée', 'plage',
+    'musée', 'café', 'brunch', 'restaurant', 'concert', 'sport', 'atelier de langues', 'bowling', 'escape game', 'cinéma', 'karaoké', 'pique-nique'
+  ];
+
+  myGroups: any[] = [];
+
+  constructor(private http: HttpClient, private eventService: EventService, private router: Router, private notificationService: NotificationService,
+  private groupService: GroupService) {}
 
   ngOnInit() {
     this.http.get<any[]>(`${environment.apiUrl}/api/users`)
       .subscribe(data => {
         console.log('Utilisateurs récupérés :', data);
         this.users = data;
+      });
+
+      this.groupService.getMyGroups().subscribe({
+        next: (groups) => this.myGroups = groups,
+        error: (err) => console.error('Erreur chargement groupes', err)
       });
   }
 
@@ -49,7 +82,8 @@ export class EventFormComponent {
             title: '',
             description: '',
             location: '',
-            date: ''
+            date: '',
+            tag: '' // valeur vide par défaut
           };
         },
         error: err => {
@@ -59,6 +93,10 @@ export class EventFormComponent {
       });
       this.successMessage = true;
       setTimeout(() => this.successMessage = false, 3000);
+      const payload = {
+        ...this.event,
+        // groupId inclus déjà si visibilité === GROUP
+      };
   }
 
   loading = false;
@@ -66,5 +104,9 @@ export class EventFormComponent {
   onSubmit() {
     this.loading = true;
     // Ton code ici...
+  }
+
+  selectTag(tag: string) {
+    this.event.tag = tag;
   }
 }

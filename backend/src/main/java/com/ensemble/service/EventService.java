@@ -2,6 +2,8 @@
 package com.ensemble.service;
 
 import com.ensemble.model.Event;
+import com.ensemble.model.EventVisibility;
+import com.ensemble.model.Group;
 import com.ensemble.model.User;
 import com.ensemble.repository.EventRepository;
 import org.springframework.stereotype.Service;
@@ -49,4 +51,14 @@ public class EventService {
 
         eventRepository.save(event);
     }
+
+    public List<Event> findByVisibility(EventVisibility visibility) {
+        return eventRepository.findByVisibility(visibility);
+    }
+
+    public List<Event> findVisibleEvents(List<Group> groups) {
+        return eventRepository.findByVisibilityOrGroupIn(EventVisibility.PUBLIC, groups);
+    }
+
+
 }

@@ -1,0 +1,9 @@
+.btn-warning {
+  background-color: #FFA726;
+  border: none;
+  font-weight: bold;
+  font-size: 1.2rem;
+}
+input, select {
+  border-radius: 12px;
+}

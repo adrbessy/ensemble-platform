@@ -15,12 +15,47 @@
       Uniquement les événements avec des places restantes
     </label>
   </div>
+
+  <!-- ✅ Checkbox "Mes groupes uniquement" -->
+  <div class="form-check">
+    <input
+      type="checkbox"
+      class="form-check-input"
+      [(ngModel)]="onlyMyGroups"
+      (change)="applyFilters()"
+      id="myGroupsCheck"
+    />
+    <label class="form-check-label" for="myGroupsCheck">
+      Événements de mes groupes uniquement
+    </label>
+  </div>
+
+
+    <!-- 🎯 Filtres tags -->
+  <div class="mb-3">
+    <label class="form-label">Activités</label>
+    <select class="form-select" multiple [(ngModel)]="selectedTags">
+      <option *ngFor="let tag of tags" [value]="tag">{{ tag }}</option>
+    </select>
+  </div>
+
+  <!-- 📅 Filtre date -->
+  <div class="mb-3">
+    <label class="form-label">À partir du :</label>
+    <input type="date" class="form-control" [(ngModel)]="selectedDate">
+  </div>
+
+  <!-- 🔘 Bouton pour appliquer les filtres -->
+  <div class="text-end">
+    <button class="btn btn-primary" (click)="applyFilters()">Filtrer</button>
+  </div>
+
 </div>
 
 <!-- 📦 Container -->
 <div class="container-xl mt-4" style="max-width: 1200px;">
   <div class="row g-3">
-    <div *ngFor="let event of events" class="col-12 col-sm-6 col-lg-4">
+    <div *ngFor="let event of filteredEvents" class="col-12 col-sm-6 col-lg-4">
       
       <!-- 🧱 Carte complète -->
       <div class="card h-100 d-flex flex-column">
@@ -28,6 +63,10 @@
           
           <div>
             <h5 class="card-title text-truncate" [title]="event.title">{{ event.title }}</h5>
+            <div class="position-absolute top-0 end-0 m-2">
+              <span class="badge bg-warning" *ngIf="event.visibility === 'GROUP'">🔒 Privé</span>
+              <span class="badge bg-success" *ngIf="event.visibility === 'PUBLIC'">🌐 Public</span>
+            </div>
             <h6 class="card-subtitle mb-2 text-muted">
               📅 {{ event.date }} |
               📍 {{ event.location }}
@@ -35,6 +74,9 @@
             <p class="card-text text-truncate" title="{{ event.description }}">
               {{ event.description }}
             </p>
+            <div class="mb-2">
+              <span class="badge bg-secondary">{{ event.tag }}</span>
+            </div>
             <p>
               👤 <strong>{{ event.organizer.username }}</strong>
             </p>

@@ -32,9 +32,16 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                                     FilterChain filterChain)
             throws ServletException, IOException {
 
-        final String authHeader = request.getHeader("Authorization");
-        final String jwt;
-        final String userEmail;
+        String path = request.getRequestURI();
+        System.out.println("Path = " + path);
+        if (path.startsWith("/api/auth") || path.startsWith("/h2-console")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        String authHeader = request.getHeader("Authorization");
+        String jwt;
+        String userEmail = null;
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
@@ -43,9 +50,13 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         jwt = authHeader.substring(7); // Enlève "Bearer "
         userEmail = jwtService.extractUsername(jwt); // Méthode à implémenter
+        System.out.println("🔑 JWT reçu : " + jwt);
+        System.out.println("📧 Email extrait du token : " + userEmail);
 
         if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             UserDetails userDetails = userDetailsService.loadUserByUsername(userEmail);
+            System.out.println("🔍 UserDetails trouvé : " + userDetails.getUsername());
+            System.out.println("✅ Vérification de validité du token...");
             if (jwtService.isTokenValid(jwt, userDetails)) {
                 UsernamePasswordAuthenticationToken authToken =
                         new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());

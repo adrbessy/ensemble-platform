@@ -1,5 +1,6 @@
 import { Component, EventEmitter, Output } from '@angular/core';
 import { AuthService } from '../auth.service';
+import jwt_decode from 'jwt-decode';
 
 @Component({
   selector: 'app-navbar',
@@ -11,9 +12,19 @@ export class NavbarComponent {
   @Output() toggleFiltersPanel = new EventEmitter<void>();
 
   isUserLoggedIn: boolean = false;
+  user: any = null;
 
   ngOnInit(): void {
     this.isUserLoggedIn = this.authService.isLoggedIn();
+    const token = this.authService.getToken();
+    if (token) {
+      try {
+        const decoded: any = jwt_decode(token);
+        this.user = decoded;
+      } catch (error) {
+        console.error('Erreur lors du décodage du token :', error);
+      }
+    }
   }
 
   isLoggedIn(): boolean {

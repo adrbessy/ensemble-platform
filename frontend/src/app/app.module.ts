@@ -18,10 +18,12 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { ToastrModule } from 'ngx-toastr';
 import { LoaderInterceptor } from './interceptors/loader.interceptor';
 import { LoaderComponent } from './loader/loader.component';
+import { GroupCreateComponent } from './group-create/group-create.component';
+import { RouterModule } from '@angular/router';
 
 @NgModule({
-  declarations: [EventFormComponent, AppComponent, EventListComponent, LoginComponent, NavbarComponent, SignupComponent, ConfirmModalComponent, LoaderComponent],
-  imports: [BrowserAnimationsModule, // OBLIGATOIRE pour ngx-toastr
+  declarations: [EventFormComponent, AppComponent, EventListComponent, LoginComponent, NavbarComponent, SignupComponent, ConfirmModalComponent, LoaderComponent, GroupCreateComponent],
+  imports: [RouterModule, BrowserAnimationsModule, // OBLIGATOIRE pour ngx-toastr
     ToastrModule.forRoot({
       positionClass: 'toast-bottom-right',
       preventDuplicates: true,
