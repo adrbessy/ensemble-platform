@@ -1,89 +1,209 @@
-<div class="card shadow-lg border border-primary">
-  <div class="card-header bg-light">
-    <h2 class="h5 mb-0">Créer un événement</h2>
-  </div>
-  <div class="card-body mx-auto px-3 py-4" style="max-width: 600px;">
-    <form (ngSubmit)="submitForm()" autocomplete="off">
-      <div class="mb-4">
-        <label class="form-label">Titre :</label>
-        <input class="form-control mb-3" [(ngModel)]="event.title" name="title" required />
+<div class="container py-4">
+  <form (ngSubmit)="submitForm()" autocomplete="off" class="d-flex flex-column gap-3">
+
+    <h2 class="text-center fw-bold mb-3">Je crée une activité</h2>
+
+    <!-- Tag -->
+    <div>
+      <label class="form-label fw-bold">Tag</label>
+
+      <!-- Tags les plus fréquents -->
+      <div class="d-flex flex-wrap gap-2 mb-2">
+        <span
+          *ngFor="let t of filteredTags"
+          (click)="selectTag(t)"
+          class="badge px-3 py-2"
+          [ngClass]="{
+            'bg-warning text-dark': event.tag === t,
+            'bg-light border text-dark': event.tag !== t
+          }"
+          style="cursor: pointer"
+        >
+          {{ t }}
+        </span>
       </div>
 
-      <div class="mb-4">
-        <label class="form-label">Description :</label>
-      <textarea class="form-control mb-3" [(ngModel)]="event.description" name="description"></textarea>
-      </div>
-
-      <div class="mb-3">
-        <label class="form-label">Catégorie</label>
-          <div class="mb-3">
-            <span
-              *ngFor="let t of availableTags"
-              (click)="selectTag(t)"
-              class="badge rounded-pill border mx-1"
-              [ngClass]="{
-                'bg-primary text-white': event.tag === t,
-                'bg-light text-dark': event.tag !== t
-              }"
-              style="cursor: pointer;"
-            >
-              {{ t }}
-            </span>
-          </div>
-      </div>
-
-      <div class="mb-4">
-        <label class="form-label">Lieu :</label>
-        <input class="form-control mb-3" [(ngModel)]="event.location" name="location" placeholder="Ex: Jardin Public, Bordeaux" />
-      </div>
-
-      <div class="mb-4">
-        <label class="form-label">Date :</label>
-        <input class="form-control mb-3" type="date" [(ngModel)]="event.date" name="date" required />
-      </div>
-
-      <div class="mb-3">
-        <label class="form-label">Nombre maximum de participants :</label>
-        <input type="number" class="form-control" [(ngModel)]="event.maxParticipants" name="maxParticipants">
-      </div>
-
-      <div class="mb-3">
-        <label class="form-label">Genre requis :</label>
-        <select class="form-select" [(ngModel)]="event.genderRequirement" name="genderRequirement">
-          <option value="Parité">Parité exigée (autant de femmes que d'hommes)</option>
-          <option value="Mixte">Mixte (parité non exigée)</option>
-          <option value="Femme">Femmes uniquement</option>
-          <option value="Homme">Hommes uniquement</option>
-        </select>
-      </div>
-
-      <!-- 🌐 Visibilité -->
-      <div class="mb-3">
-        <label class="form-label">Visibilité de l’événement :</label>
-        <select class="form-select" [(ngModel)]="event.visibility" name="visibility">
-          <option value="PUBLIC">Public (par défaut)</option>
-          <option value="GROUP">Privé – réservé à un groupe</option>
-        </select>
-      </div>
-
-      <!-- 👥 Choix du groupe si visibilité = GROUP -->
-      <div class="mb-3" *ngIf="event.visibility === 'GROUP'">
-        <label class="form-label">Groupe concerné :</label>
-        <select class="form-select" [(ngModel)]="event.groupId" name="groupId">
-          <option *ngFor="let g of myGroups" [value]="g.id">{{ g.name }}</option>
-        </select>
-      </div>
-
-
-      <button type="submit" class="btn btn-primary w-100 mt-2" [disabled]="loading">
-        <span *ngIf="!loading">Créer</span>
-        <span *ngIf="loading" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-      </button>
-    </form>
-
-    <!-- ✅ Message de succès -->
-    <div *ngIf="successMessage" class="alert alert-success mt-3 text-center container-sm">
-      Événement créé avec succès !
+      <!-- Barre de recherche -->
+      <input
+        type="text"
+        class="form-control"
+        placeholder="Rechercher un tag..."
+        [(ngModel)]="searchTag"
+        (ngModelChange)="onSearchTagChange()"
+      />
     </div>
-  </div>
+    <div *ngIf="tagMissingError" class="text-danger small mt-1">
+      Vous devez sélectionner un tag pour votre activité.
+    </div>
+
+    <!-- Description -->
+    <div>
+      <label class="form-label fw-bold">Description</label>
+      <textarea class="form-control" [(ngModel)]="event.description" name="description" rows="2"
+        placeholder="Ex: Session libre pour joueurs de tous niveaux" (ngModelChange)="onDescriptionChange()"></textarea>
+    </div>
+    <div class="d-flex justify-content-between small mt-1">
+      <span *ngIf="descriptionError" class="text-danger">La description est obligatoire (10–500 caractères).</span>
+      <span [class.text-danger]="event.description?.length > maxDescriptionLength">
+        {{ event.description?.length || 0 }}/{{ maxDescriptionLength }}
+      </span>
+    </div>
+
+    <!-- Date & Time -->
+    <div class="d-flex flex-column flex-md-row gap-3">
+      <div>
+        <label class="form-label fw-bold">Date</label>
+        <input
+          class="form-control"
+          ngbDatepicker
+          name="date"
+          [(ngModel)]="event.date"
+          #d="ngbDatepicker"
+          (click)="d.toggle()"
+          [minDate]="minDate"
+          placeholder="jj/mm/aaaa"
+          (ngModelChange)="onDateOrTimeChange()"
+        />
+      </div>
+      <!-- Heure -->
+      <div class="flex-fill">
+        <label class="form-label fw-bold">Heure</label>
+        <div class="d-flex gap-2 align-items-center">
+        <input
+          type="time"
+          lang="fr"
+          class="form-control"
+          [(ngModel)]="event.startTime"
+          name="startTime"
+          [min]="getMinStartTime()"
+          required
+          (ngModelChange)="onDateOrTimeChange()"
+        />
+          <span class="align-self-center">→</span>
+          <input
+            type="time"
+            lang="fr"
+            class="form-control"
+            [(ngModel)]="event.endTime"
+            name="endTime"
+            required
+          />
+        </div>
+      </div>
+    </div>
+    <div *ngIf="dateOrTimeMissingError" class="text-danger small mt-1">
+      La date et l’heure de début sont obligatoires.
+    </div>
+    <div *ngIf="dateInPastError" class="text-danger small mt-1">
+      La date et l’heure de début doivent être dans le futur.
+    </div>
+    <div *ngIf="timeRangeError" class="text-danger small mt-1">
+      L’heure de fin doit être postérieure à l’heure de début.
+    </div>
+
+    <!-- Lieu avec autocomplétion -->
+    <div>
+      <label class="form-label fw-bold">📍 Lieu</label>
+      <input
+        #searchInput
+        type="text"
+        class="form-control"
+        placeholder="Rechercher un lieu (ex: Café Auguste)"
+      />
+    </div>
+    <!-- Adresse récupérée automatiquement -->
+    <div *ngIf="event.address">
+      <label class="form-label mt-2">Adresse détectée</label>
+      <input class="form-control" [value]="event.address" readonly />
+    </div>
+    <div *ngIf="locationError" class="text-danger small mt-1">
+      Le lieu est obligatoire. Veuillez sélectionner un lieu dans la liste.
+    </div>
+
+    <!-- Participants -->
+    <div>
+      <label class="form-label fw-bold d-block">Participants</label>
+      <div class="d-flex gap-3">
+        <div class="flex-fill">
+          <label>Min</label>
+          <input type="number" class="form-control" [(ngModel)]="event.minParticipants" name="minParticipants" />
+        </div>
+        <div class="flex-fill">
+          <label>Max</label>
+          <input type="number" class="form-control" [(ngModel)]="event.maxParticipants" name="maxParticipants" />
+        </div>
+      </div>
+    </div>
+    <div *ngIf="participantRangeError" class="text-danger small mt-1">
+      Le nombre maximum de participants doit être supérieur ou égal au minimum.
+    </div>
+    <div *ngIf="minParticipantsError" class="text-danger small mt-1">
+      Le nombre minimum de participants doit être compris entre 2 et 100.
+    </div>
+    <div *ngIf="maxParticipantsError" class="text-danger small mt-1">
+      Le nombre maximum de participants doit être compris entre 2 et 100.
+    </div>
+
+    <!-- Âges -->
+    <div>
+      <label class="form-label fw-bold">Tranche d'âge</label>
+      <div class="d-flex gap-3">
+        <div class="flex-fill">
+          <label>Âge min</label>
+          <input type="number" class="form-control" [(ngModel)]="event.minAge" name="minAge" min="13" />
+        </div>
+        <div class="flex-fill">
+          <label>Âge max</label>
+          <input type="number" class="form-control" [(ngModel)]="event.maxAge" name="maxAge" />
+        </div>
+      </div>
+    </div>
+    <div *ngIf="ageRangeError" class="text-danger small mt-1">
+      L'âge maximum doit être supérieur ou égal à l'âge minimum.
+    </div>
+
+    <!-- Contraintes de genre -->
+    <div>
+      <label class="form-label fw-bold">Contraintes</label>
+      <select class="form-select" [(ngModel)]="event.genderRequirement" name="genderRequirement">
+        <option value="Parité">♀️ = ♂️ Parity</option>
+        <option value="Mixte">Mixte</option>
+        <option value="Femme">Femmes uniquement</option>
+        <option value="Homme">Hommes uniquement</option>
+      </select>
+    </div>
+
+    <!-- Visibilité -->
+    <div>
+      <label class="form-label fw-bold">🔒 Visibilité de l’événement :</label>
+      <select class="form-select" [(ngModel)]="event.visibility" name="visibility">
+        <option value="PUBLIC">◯ Public (par défaut)</option>
+        <option value="GROUP">● Privé – réservé à un groupe</option>
+      </select>
+    </div>
+
+    <!-- Groupe concerné -->
+    <div *ngIf="event.visibility === 'GROUP'">
+      <label class="form-label fw-bold">Groupe concerné :</label>
+      <select class="form-select" [(ngModel)]="event.groupId" name="groupId">
+        <option *ngFor="let g of myGroups" [value]="g.id">{{ g.name }}</option>
+      </select>
+    </div>
+
+    <!-- Ajouter une photo -->
+    <div class="border rounded p-3 text-center">
+      <strong>➕ Ajouter une photo</strong> liée à l’événement (facultatif)
+    </div>
+
+    <!-- Bouton -->
+    <button type="submit" class="btn btn-warning w-100 fw-bold" [disabled]="loading">
+      <span *ngIf="!loading">Créer</span>
+      <span *ngIf="loading" class="spinner-border spinner-border-sm"></span>
+    </button>
+
+    <!-- Message succès -->
+    <div *ngIf="successMessage" class="alert alert-success text-center">
+      ✅ Événement créé avec succès !
+    </div>
+  </form>
 </div>

@@ -1,3 +1,13 @@
+
+.container {
+  background: #fff6b0;
+  padding: 2rem;
+  border-radius: 8px;
+  max-width: 500px;
+  width: 100%;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
 .btn-warning {
   background-color: #FFA726;
   border: none;
@@ -6,4 +16,11 @@
 }
 input, select {
   border-radius: 12px;
+}
+
+.error-message {
+  color: red;
+  font-weight: bold;
+  margin: 10px 0;
+  text-align: center;
 }

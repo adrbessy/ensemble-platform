@@ -13,10 +13,18 @@ import { AuthService } from './auth.service';
 export class LoginComponent {
   email = '';
   password = '';
+  errorMessage: string = ''; 
 
   constructor(private http: HttpClient, private router: Router, private notificationService: NotificationService, private authService: AuthService) {}
 
   login() {
+
+    if (!this.email || !this.password) {
+      this.errorMessage = "Veuillez remplir tous les champs.";
+      return;
+    }
+
+    this.errorMessage = '';
     const credentials = {
       email: this.email,
       password: this.password
@@ -34,7 +42,7 @@ export class LoginComponent {
             this.router.navigate(['/events']); // ✅ Redirection ici
         },
         error: (err) => {
-            this.notificationService.error("Email ou mot de passe incorrect.");
+            this.errorMessage = "Email ou mot de passe incorrect.";
             console.error('Erreur de connexion', err);
         }
       });

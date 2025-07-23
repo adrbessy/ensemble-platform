@@ -31,3 +31,5 @@ backend/data/ensembledb.mv.db
 
 maquettes/
 personnesTest/
+backend/uploads/photos/
+frontend/src/index.html

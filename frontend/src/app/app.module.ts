@@ -20,9 +20,17 @@ import { LoaderInterceptor } from './interceptors/loader.interceptor';
 import { LoaderComponent } from './loader/loader.component';
 import { GroupCreateComponent } from './group-create/group-create.component';
 import { RouterModule } from '@angular/router';
+import { ForgotPasswordComponent } from './forgot-password/forgot-password.component';
+import { registerLocaleData } from '@angular/common';
+import localeFr from '@angular/common/locales/fr';
+import { LOCALE_ID } from '@angular/core';
+import { NgbDateParserFormatter } from '@ng-bootstrap/ng-bootstrap';
+import { CustomDateParserFormatter } from './utils/custom-date-parser-formatter';
+
+registerLocaleData(localeFr);
 
 @NgModule({
-  declarations: [EventFormComponent, AppComponent, EventListComponent, LoginComponent, NavbarComponent, SignupComponent, ConfirmModalComponent, LoaderComponent, GroupCreateComponent],
+  declarations: [EventFormComponent, AppComponent, EventListComponent, LoginComponent, NavbarComponent, SignupComponent, ConfirmModalComponent, LoaderComponent, GroupCreateComponent, ForgotPasswordComponent],
   imports: [RouterModule, BrowserAnimationsModule, // OBLIGATOIRE pour ngx-toastr
     ToastrModule.forRoot({
       positionClass: 'toast-bottom-right',
@@ -39,7 +47,10 @@ import { RouterModule } from '@angular/router';
     provide: HTTP_INTERCEPTORS,
     useClass: LoaderInterceptor,
     multi: true
-  }],
-  bootstrap: [AppComponent]
+  },
+  { provide: LOCALE_ID, useValue: 'fr-FR' },
+  { provide: NgbDateParserFormatter, useClass: CustomDateParserFormatter }],
+  bootstrap: [AppComponent],
+  
 })
 export class AppModule {}

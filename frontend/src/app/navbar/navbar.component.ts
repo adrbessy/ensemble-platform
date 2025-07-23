@@ -1,10 +1,12 @@
 import { Component, EventEmitter, Output } from '@angular/core';
 import { AuthService } from '../auth.service';
 import jwt_decode from 'jwt-decode';
+import { environment } from 'src/environments/environment';
 
 @Component({
   selector: 'app-navbar',
   templateUrl: './navbar.component.html',
+  styleUrls: ['./navbar.component.css']
 })
 export class NavbarComponent {
   constructor(private authService: AuthService) {}
@@ -13,6 +15,7 @@ export class NavbarComponent {
 
   isUserLoggedIn: boolean = false;
   user: any = null;
+  environment = environment;
 
   ngOnInit(): void {
     this.isUserLoggedIn = this.authService.isLoggedIn();
@@ -21,6 +24,8 @@ export class NavbarComponent {
       try {
         const decoded: any = jwt_decode(token);
         this.user = decoded;
+        console.log('Utilisateur décodé :', this.user);
+        console.log('Nom du fichier photo :', this.user?.photoFilename);
       } catch (error) {
         console.error('Erreur lors du décodage du token :', error);
       }

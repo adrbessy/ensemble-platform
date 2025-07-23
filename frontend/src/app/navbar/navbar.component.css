@@ -1,0 +1,27 @@
+.navbar {
+  background-color: #fef9dc; /* beige doux */
+  padding: 0.8rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: "Inter", sans-serif;
+  font-weight: 500;
+  font-size: 1.1rem;
+  border-bottom: 1px solid #eee;
+}
+
+.navbar-brand {
+  font-size: 1.3rem;
+  font-weight: bold;
+  color: #002a16;
+}
+
+.navbar-right a {
+  margin-left: 1.5rem;
+  color: #002a16;
+  text-decoration: none;
+}
+
+.navbar-right a:hover {
+  text-decoration: underline;
+}

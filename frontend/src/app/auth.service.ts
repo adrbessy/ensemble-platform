@@ -78,6 +78,19 @@ export class AuthService {
   register(formData: FormData): Observable<any> {
     return this.http.post(`${environment.apiUrl}/auth/signup`, formData);
   }
+
+  getDecodedToken(): any {
+    const token = localStorage.getItem('token');
+    if (!token) return null;
+
+    try {
+      const payload = token.split('.')[1];
+      return JSON.parse(atob(payload));
+    } catch (e) {
+      console.error('Erreur lors du décodage du token', e);
+      return null;
+    }
+  }
   
 
 }

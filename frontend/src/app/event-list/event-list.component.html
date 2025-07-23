@@ -72,7 +72,9 @@
               📍 {{ event.location }}
             </h6>
             <p class="card-text text-truncate" title="{{ event.description }}">
-              {{ event.description }}
+              {{ event.description.length > 100
+              ? (event.description | slice:0:100) + '...'
+              : event.description }}
             </p>
             <div class="mb-2">
               <span class="badge bg-secondary">{{ event.tag }}</span>

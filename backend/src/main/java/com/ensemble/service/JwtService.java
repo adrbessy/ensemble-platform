@@ -27,12 +27,19 @@ public class JwtService {
     public String generateToken(UserDetails userDetails) {
         User user = userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new UsernameNotFoundException("Utilisateur non trouvé"));
+        System.out.println("Photo filename avant création du token : " + user.getPhotoFilename());
 
-        return Jwts.builder()
-                .setSubject(user.getEmail()) // ou userDetails.getUsername()
-                .claim("id", user.getId())   // ✅ ici tu ajoutes l'id
+        String token = Jwts.builder()
+                .setSubject(user.getEmail())
+                .claim("id", user.getId())
+                .claim("firstName", user.getFirstName())
+                .claim("photoFilename", user.getPhotoFilename())
+                .claim("birthDate", user.getBirthdate().toString())
                 .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
+
+        System.out.println("🔐 TOKEN GÉNÉRÉ : " + token);
+        return token;
     }
 
     // Récupère le username (email) depuis le token

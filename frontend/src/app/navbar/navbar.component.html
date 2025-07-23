@@ -1,44 +1,58 @@
-<nav class="navbar navbar-expand navbar-light bg-light mb-3">
+<nav class="navbar navbar-expand-lg bg-light-yellow px-4 py-2 shadow-sm">
   <div class="container-fluid">
-    <a class="navbar-brand" href="#">Chill and Go</a>
-    
-    <div class="d-flex">
-      <ul class="navbar-nav flex-row">
-        <!-- NON connecté -->
-        <li class="nav-item" *ngIf="!isLoggedIn()">
-          <a class="nav-link" routerLink="/login">Se connecter</a>
-        </li>
-        <li class="nav-item" *ngIf="!isLoggedIn()">
-          <a class="nav-link" routerLink="/signup">S’inscrire</a>
-        </li>
+    <!-- Logo -->
+    <a class="navbar-brand fw-bold text-dark fs-4" routerLink="/">Chill and Go</a>
 
-        <!-- CONNECTÉ -->
-        <li class="nav-item" *ngIf="isLoggedIn()">
-          <a class="nav-link" routerLink="/create-event">Créer un événement</a>
-        </li>
-        <li class="nav-item" *ngIf="isLoggedIn()">
-          <button class="nav-link btn btn-link" (click)="toggleFilters()">Filtres</button>
-        </li>
-        <li class="nav-item" *ngIf="isLoggedIn()">
-          <a class="nav-link" routerLink="/create-group">Créer un groupe</a>
-        </li>
-      </ul>
+    <!-- Toggle button (mobile) -->
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent">
+      <span class="navbar-toggler-icon"></span>
+    </button>
 
-        <span class="navbar-text me-3 text-primary" *ngIf="isLoggedIn()">
-            Connecté en tant que <strong>{{ getDisplayName() }}</strong>
-        </span>
-      <button type="button" class="btn btn-outline-danger" *ngIf="isLoggedIn()" (click)="logout()">
+    <!-- Links -->
+    <div class="collapse navbar-collapse justify-content-end" id="navbarContent">
+      <ul class="navbar-nav align-items-center gap-3">
+        
+        <!-- Non connecté -->
+        <ng-container *ngIf="!isLoggedIn()">
+          <li class="nav-item">
+            <a class="nav-link" routerLink="/login">Connexion</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" routerLink="/signup">Inscription</a>
+          </li>
+        </ng-container>
+
+        <!-- Connecté -->
+        <ng-container *ngIf="isLoggedIn()">
+          <li class="nav-item">
+            <a class="nav-link" routerLink="/create-event">Créer une activité</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link d-flex align-items-center gap-1" routerLink="/contacts">
+              <i class="bi bi-people-fill"></i> Contacts
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link d-flex align-items-center gap-1" routerLink="/groupes">
+              <i class="bi bi-journal-text"></i> Groupes
+            </a>
+          </li>
+          <button type="button" class="btn btn-outline-danger" *ngIf="isLoggedIn()" (click)="logout()">
         Se déconnecter
-      </button>
+        </button>
+          <!-- Avatar + nom -->
+           
+          <li class="nav-item d-flex align-items-center">
+            <img *ngIf="user?.photoFilename"
+            [src]="'http://localhost:8080/uploads/photos/' + user.photoFilename"
+            alt="Profil"
+            class="rounded-circle me-2"
+            width="36"
+            height="36"
+            />
+          </li>
+        </ng-container>
+      </ul>
     </div>
   </div>
-  <div class="d-flex align-items-center" *ngIf="user">
-    <img *ngIf="user.photoFilename"
-        [src]="'http://localhost:8080/uploads/photos/' + user.photoFilename"
-        alt="Photo de profil"
-        class="rounded-circle"
-        width="50" height="50" />
-    <span>{{ user.firstName }}</span>
-  </div>
-  
 </nav>

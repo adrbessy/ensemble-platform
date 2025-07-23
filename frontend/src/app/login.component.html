@@ -1,6 +1,42 @@
-<div>
-  <h2>Connexion</h2>
-  <input [(ngModel)]="email" placeholder="Email">
-  <input [(ngModel)]="password" type="password" placeholder="Mot de passe">
-  <button (click)="login()">Se connecter</button>
+<div class="container d-flex justify-content-center align-items-start min-vh-100 bg-light-yellow">
+  <div class="card p-4 shadow mt-5" style="width: 400px; background-color: #fff3a8; border-radius: 12px;">
+    <h2 class="text-center mb-4 fw-bold" style="color: #062b1f;">Connexion</h2>
+
+    <div class="mb-3">
+      <input
+        type="email"
+        [(ngModel)]="email"
+        class="form-control"
+        placeholder="Email"
+        required
+      />
+    </div>
+
+    <div class="mb-3">
+      <input
+        type="password"
+        [(ngModel)]="password"
+        class="form-control"
+        placeholder="Mot de passe"
+        required
+      />
+    </div>
+
+    <div class="mb-3 text-start">
+      <a routerLink="/forgot-password" class="small text-dark">Mot de passe oublié ?</a>
+    </div>
+
+    <div *ngIf="errorMessage" class="text-danger text-center mb-3">
+      {{ errorMessage }}
+    </div>
+
+    <button
+      (click)="login()"
+      class="btn w-100"
+      style="background-color: #ffa726; color: white; font-weight: bold;"
+    >
+      Se connecter
+    </button>
+
+  </div>
 </div>

@@ -1,82 +1,99 @@
-<h2>Inscription</h2>
-<form (ngSubmit)="register()" #signupForm="ngForm">
-  
-  <!-- Image circulaire avec icône appareil -->
-  <div class="d-flex flex-column align-items-center mb-4">
-    <label for="photo" style="cursor: pointer;">
-      <div class="rounded-circle d-flex justify-content-center align-items-center bg-light"
-          style="width: 100px; height: 100px; border: 2px dashed #ccc;">
-        
-        <!-- Affiche l'aperçu -->
-        <img *ngIf="photoPreview"
-        [src]="photoPreview"
-        alt="Aperçu"
-        style="width: 100px; height: 100px; object-fit: cover; border-radius: 50%;" />
+<div class="container">
+  <h2>Inscription</h2>
+  <form (ngSubmit)="register()" #signupForm="ngForm">
+    
+    <!-- Image circulaire avec icône appareil -->
+    <div class="d-flex flex-column align-items-center mb-4">
+      <label for="photo" style="cursor: pointer;">
+        <div class="rounded-circle d-flex justify-content-center align-items-center bg-light"
+            style="width: 100px; height: 100px; border: 2px dashed #ccc;">
+          
+          <!-- Affiche l'aperçu -->
+          <img *ngIf="photoPreview"
+          [src]="photoPreview"
+          alt="Aperçu"
+          style="width: 100px; height: 100px; object-fit: cover; border-radius: 50%;" />
 
-        <!-- Sinon, affiche l’icône -->
-        <i *ngIf="!photoPreview" class="bi bi-camera" style="font-size: 2rem;"></i>
+          <!-- Sinon, affiche l’icône -->
+          <i *ngIf="!photoPreview" class="bi bi-camera" style="font-size: 2rem;"></i>
+        </div>
+      </label>
+
+      <input type="file" id="photo" (change)="onFileSelected($event)" class="d-none" />
+      <small class="mt-2" *ngIf="!photoPreview">Ajouter une photo</small>
+    </div>
+    <div *ngIf="photoError" class="text-danger small mt-1">
+      La photo est obligatoire.
+    </div>
+
+
+    <!-- Champ prénom + nom -->
+    <div class="row mb-3">
+      <div class="col">
+        <input type="text"
+       class="form-control"
+       [(ngModel)]="firstName"
+       name="firstName"
+       #firstNameRef="ngModel"
+       placeholder="Prénom"
+       required />
+        <div *ngIf="firstNameRef.invalid && firstNameRef.touched" class="text-danger mt-1" style="font-size: 0.9em;">
+          Le prénom est obligatoire.
+        </div>
       </div>
-    </label>
-
-    <input type="file" id="photo" (change)="onFileSelected($event)" class="d-none" />
-    <small class="mt-2">Ajouter une photo</small>
-  </div>
-
-
-  <!-- Champ prénom + nom -->
-  <div class="row mb-3">
-    <div class="col">
-      <input type="text" class="form-control" [(ngModel)]="firstName" name="firstName" placeholder="Prénom" required />
+      <div class="col">
+        <input type="text" class="form-control" [(ngModel)]="lastName" name="lastName" placeholder="Nom" required />
+      </div>
     </div>
-    <div class="col">
-      <input type="text" class="form-control" [(ngModel)]="lastName" name="lastName" placeholder="Nom" required />
+
+    <!-- Email -->
+    <div class="mb-3">
+      <input type="email" class="form-control" [(ngModel)]="email" name="email" placeholder="Email" required />
     </div>
-  </div>
 
-  <!-- Email -->
-  <div class="mb-3">
-    <input type="email" class="form-control" [(ngModel)]="email" name="email" placeholder="Email" required />
-  </div>
-
-  <!-- Mot de passe -->
-  <div class="mb-1">
-    <input type="password" class="form-control" [(ngModel)]="password" name="password" placeholder="Mot de passe" required />
-  </div>
-  <small class="text-muted mb-2 d-block">Le mot de passe doit contenir <strong>8 caractères</strong></small>
-
-  <!-- Confirmation mot de passe -->
-  <div class="mb-3">
-    <input type="password" class="form-control" [(ngModel)]="confirmPassword" name="confirmPassword" placeholder="Confirmation du mot de passe" required />
-  </div>
-
-  <!-- Date + Sexe -->
-  <div class="row mb-3">
-    <div class="col">
-      <input type="date" class="form-control" [(ngModel)]="birthdate" name="birthdate" placeholder="Date de naissance" required />
+    <!-- Mot de passe -->
+    <div class="mb-1">
+      <input type="password" class="form-control" [(ngModel)]="password" name="password" placeholder="Mot de passe" required />
     </div>
-    <div class="col">
-      <select class="form-select" [(ngModel)]="gender" name="gender" required>
-        <option value="">Sexe</option>
-        <option value="HOMME">Homme</option>
-        <option value="FEMME">Femme</option>
-        <option value="AUTRE">Autre</option>
-      </select>
+    <small class="text-muted mb-2 d-block">Le mot de passe doit contenir au moins <strong>8 caractères</strong></small>
+
+    <!-- Confirmation mot de passe -->
+    <div class="mb-3">
+      <input type="password" class="form-control" [(ngModel)]="confirmPassword" name="confirmPassword" placeholder="Confirmation du mot de passe" required />
     </div>
-  </div>
 
-  <!-- Conditions -->
-  <div class="form-check mb-4">
-    <input class="form-check-input" type="checkbox" [(ngModel)]="acceptCGU" name="acceptCGU" required />
-    <label class="form-check-label">
-      J’accepte les conditions <a href="#" target="_blank">Générales d’Utilisation (CGU)</a>
-    </label>
-  </div>
+    <!-- Date + Sexe -->
+    <div class="row mb-3">
+      <div class="col">
+        <input type="date" class="form-control" [(ngModel)]="birthdate" name="birthdate" placeholder="Date de naissance" [max]="today" required />
+      </div>
 
-  <!-- Bouton -->
-  <button type="submit" class="btn btn-warning w-100" [disabled]="!signupForm.form.valid || !acceptCGU">
-    S’inscrire
-  </button>
-  <button (click)="router.navigate(['/login'])">Aller au login</button>
+      <div class="col">
+        <select class="form-select" [(ngModel)]="gender" name="gender" required>
+          <option value="" disabled selected hidden>Sexe</option>
+          <option value="HOMME">Homme</option>
+          <option value="FEMME">Femme</option>
+          <option value="AUTRE">Autre</option>
+        </select>
+      </div>
+    </div>
 
+    <!-- Conditions -->
+    <div class="form-check mb-4">
+      <input class="form-check-input" type="checkbox" [(ngModel)]="acceptCGU" name="acceptCGU" required />
+      <label class="form-check-label">
+        J’accepte les <a href="#" (click)="$event.preventDefault()">CGU (à venir)</a>
+      </label>
+    </div>
 
-</form>
+    <!--<div *ngIf="errorMessage" class="error-message">
+      {{ errorMessage }}
+    </div> -->
+
+    <!-- Bouton -->
+    <button type="submit" class="btn btn-warning w-100">
+      S’inscrire
+    </button>
+
+  </form>
+</div>
