@@ -4,7 +4,8 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve --proxy-config proxy.conf.json",
-    "build": "ng build --configuration production"
+    "build": "ng build --configuration production",
+    "build:maps": "node inject-key.js && ng build"
   },
   "private": true,
   "dependencies": {

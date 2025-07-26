@@ -28,6 +28,19 @@ export class SignupComponent {
   today = new Date().toISOString().split('T')[0];
 
   photoError: boolean = false;
+  prenomError: boolean = false;
+  nomError: boolean = false;
+  emailError: boolean = false;
+  emailInvalidError: boolean = false;
+  passwordError: boolean = false;
+  passwordTooShortError: boolean = false;
+  confirmPasswordError: boolean = false;
+  neCorrespondPasError: boolean = false;
+  birthdateError: boolean = false;
+  birthdateFutureError: boolean = false;
+  birthdateTooYoungError: boolean = false;
+  genderError: boolean = false;
+  acceptCGUError: boolean = false;
 
   constructor(private authService: AuthService, public router: Router, private sanitizer: DomSanitizer) {}
 
@@ -53,58 +66,130 @@ export class SignupComponent {
     }
   }
 
+  onPrenomChange(): void {
+    if (this.firstName && this.firstName.trim().length > 0) {
+      this.prenomError = false;
+    }
+  }
+
+  onNomChange(): void {
+    if (this.lastName && this.lastName.trim().length > 0) {
+      this.nomError = false;
+    }
+  }
+  onEmailChange(): void {
+    if (this.email && this.email.trim().length > 0) {
+      this.emailError = false;
+    }
+    if (this.isValidEmail(this.email)) {
+      this.emailInvalidError = false;
+    }
+  }
+  onPasswordChange(): void {
+    if (this.password && this.password.trim().length > 0) {
+      this.passwordError = false;
+    }
+    if (this.password.length < 8) {
+      this.passwordTooShortError = true;
+    } else {
+      this.passwordTooShortError = false;
+    }
+  }
+  onConfirmPasswordChange(): void {
+    if (this.confirmPassword && this.confirmPassword.trim().length > 0) {
+      this.confirmPasswordError = false;
+    }
+    if (this.password !== this.confirmPassword) {
+      this.neCorrespondPasError = true;
+    } else {
+      this.neCorrespondPasError = false;
+    }
+  }
+
+  onBirthdateChange(): void {
+    if (this.birthdate) {
+      this.birthdateError = false;
+    }
+    const today = new Date();
+    const birthDate = new Date(this.birthdate);
+    if (birthDate > today) {
+      this.birthdateFutureError = true;
+    } else {
+      this.birthdateFutureError = false;
+    }
+    const age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+    const dayDiff = today.getDate() - birthDate.getDate();
+    if (age < 16 || (age === 16 && (m < 0 || (m === 0 && dayDiff < 0)))) {
+      this.birthdateTooYoungError = true;
+    } else {
+      this.birthdateTooYoungError = false;
+    }
+  }
+
+  onGenderChange(): void {
+    if (this.gender) {
+      this.genderError = false;
+    }
+  }
+
+  onAcceptCGUChange(): void {
+    if (this.acceptCGU) {
+      this.acceptCGUError = false;
+    }
+  }
+
   register(): void {
     this.errorMessage = '';
     this.successMessage = '';
 
     if (!this.photoFile) {
       this.photoError = true;
-      this.errorMessage = 'La photo est obligatoire.';
       return;
     }
 
     if (!this.firstName.trim()) {
-      this.errorMessage = 'Le prénom est obligatoire.';
+      this.prenomError = true;
       return;
     }
 
     if (!this.lastName.trim()) {
-      this.errorMessage = 'Le nom est obligatoire.';
+      this.nomError = true;
       return;
     }
 
     if (!this.email.trim()) {
-      this.errorMessage = 'L\'email est obligatoire.';
+      this.emailError = true;
       return;
     }
 
     if (!this.isValidEmail(this.email)) {
-      this.errorMessage = 'Adresse email invalide.';
+      this.emailInvalidError = true;
       return;
     }
 
     if (!this.password.trim()) {
-      this.errorMessage = 'Le mot de passe est obligatoire.';
+      this.passwordError = true;
       return;
     }
 
     if (this.password.length < 8) {
-      this.errorMessage = 'Le mot de passe doit contenir au moins 8 caractères.';
+      this.passwordTooShortError = true;
       return;
     }
 
     if (!this.confirmPassword.trim()) {
-      this.errorMessage = 'La confirmation du mot de passe est obligatoire.';
+      this.confirmPasswordError = true;
       return;
     }
 
     if (this.password !== this.confirmPassword) {
-      this.errorMessage = 'Les mots de passe ne correspondent pas.';
+      this.neCorrespondPasError = true;
       return;
     }
 
     if (!this.birthdate) {
-      this.errorMessage = 'La date de naissance est obligatoire.';
+      this.birthdateError = true;
       return;
     }
 
@@ -112,7 +197,7 @@ export class SignupComponent {
     const birthDate = new Date(this.birthdate);
 
     if (birthDate > today) {
-      this.errorMessage = "La date de naissance ne peut pas être dans le futur.";
+      this.birthdateFutureError = true;
       return;
     }
 
@@ -120,18 +205,18 @@ export class SignupComponent {
     const m = today.getMonth() - birthDate.getMonth();
     const dayDiff = today.getDate() - birthDate.getDate();
 
-    if (age < 13 || (age === 13 && (m < 0 || (m === 0 && dayDiff < 0)))) {
-      this.errorMessage = 'Vous devez avoir au moins 13 ans pour vous inscrire.';
+    if (age < 16 || (age === 16 && (m < 0 || (m === 0 && dayDiff < 0)))) {
+      this.birthdateTooYoungError = true;
       return;
     }
 
     if (!this.gender) {
-      this.errorMessage = "Le sexe est obligatoire.";
+      this.genderError = true;
       return;
     }
 
     if (!this.acceptCGU) {
-      this.errorMessage = 'Vous devez accepter les CGU.';
+      this.acceptCGUError = true;
       return;
     }
 

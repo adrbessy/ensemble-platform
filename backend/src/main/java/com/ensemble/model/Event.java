@@ -17,8 +17,30 @@ public class Event {
     private Long id;
     private String title;
     private String description;
+
+    @Column(name = "place_name")
+    private String placeName;
     private String location;
     private LocalDate date;
+
+    @Column(name = "start_time")
+    private String startTime;
+
+    @Column(name = "end_time")
+    private String endTime;
+
+    @Column(name = "min_participants")
+    private Integer minParticipants;
+
+    @Column(name = "max_participants")
+    private Integer maxParticipants;
+
+    private Integer minAge;
+    private Integer maxAge;
+
+    private String genderRequirement;
+
+    private String imageUrl; // avec getter/setter
     @ManyToOne
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private User organizer;

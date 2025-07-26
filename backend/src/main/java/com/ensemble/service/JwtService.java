@@ -35,6 +35,7 @@ public class JwtService {
                 .claim("firstName", user.getFirstName())
                 .claim("photoFilename", user.getPhotoFilename())
                 .claim("birthDate", user.getBirthdate().toString())
+                .claim("gender", user.getGender())
                 .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
 

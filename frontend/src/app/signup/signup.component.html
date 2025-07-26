@@ -36,40 +36,60 @@
        name="firstName"
        #firstNameRef="ngModel"
        placeholder="Prénom"
-       required />
-        <div *ngIf="firstNameRef.invalid && firstNameRef.touched" class="text-danger mt-1" style="font-size: 0.9em;">
-          Le prénom est obligatoire.
-        </div>
+       required (ngModelChange)="onPrenomChange()" />
       </div>
       <div class="col">
-        <input type="text" class="form-control" [(ngModel)]="lastName" name="lastName" placeholder="Nom" required />
+        <input type="text" class="form-control" [(ngModel)]="lastName" name="lastName" placeholder="Nom" required (ngModelChange)="onNomChange()" />
       </div>
+    </div>
+    <div *ngIf="prenomError" class="text-danger small mt-1">
+      Le prénom est obligatoire.
+    </div>
+    <div *ngIf="nomError" class="text-danger small mt-1">
+      Le nom est obligatoire.
     </div>
 
     <!-- Email -->
     <div class="mb-3">
-      <input type="email" class="form-control" [(ngModel)]="email" name="email" placeholder="Email" required />
+      <input type="email" class="form-control" [(ngModel)]="email" name="email" placeholder="Email" required (ngModelChange)="onEmailChange()" />
+    </div>
+    <div *ngIf="emailError" class="text-danger small mt-1">
+      L'email est obligatoire.
+    </div>
+    <div *ngIf="emailInvalidError" class="text-danger small mt-1">
+      Adresse email invalide.
     </div>
 
     <!-- Mot de passe -->
     <div class="mb-1">
-      <input type="password" class="form-control" [(ngModel)]="password" name="password" placeholder="Mot de passe" required />
+      <input type="password" class="form-control" [(ngModel)]="password" name="password" placeholder="Mot de passe" required (ngModelChange)="onPasswordChange()" />
     </div>
-    <small class="text-muted mb-2 d-block">Le mot de passe doit contenir au moins <strong>8 caractères</strong></small>
+    <div *ngIf="passwordError" class="text-danger small mt-1">
+      Le mot de passe est obligatoire.
+    </div>
+    <div *ngIf="passwordTooShortError" class="text-danger small mt-1">
+      Le mot de passe doit contenir au moins 8 caractères.
+    </div>
 
     <!-- Confirmation mot de passe -->
     <div class="mb-3">
-      <input type="password" class="form-control" [(ngModel)]="confirmPassword" name="confirmPassword" placeholder="Confirmation du mot de passe" required />
+      <input type="password" class="form-control" [(ngModel)]="confirmPassword" name="confirmPassword" placeholder="Confirmation du mot de passe" required (ngModelChange)="onConfirmPasswordChange()" />
+    </div>
+    <div *ngIf="confirmPasswordError" class="text-danger small mt-1">
+      La confirmation du mot de passe est obligatoire.
+    </div>
+    <div *ngIf="neCorrespondPasError" class="text-danger small mt-1">
+      Les mots de passe ne correspondent pas.
     </div>
 
     <!-- Date + Sexe -->
     <div class="row mb-3">
       <div class="col">
-        <input type="date" class="form-control" [(ngModel)]="birthdate" name="birthdate" placeholder="Date de naissance" [max]="today" required />
+        <input type="date" class="form-control" [(ngModel)]="birthdate" name="birthdate" placeholder="Date de naissance" [max]="today" required (ngModelChange)="onBirthdateChange()" />
       </div>
 
       <div class="col">
-        <select class="form-select" [(ngModel)]="gender" name="gender" required>
+        <select class="form-select" [(ngModel)]="gender" name="gender" required (ngModelChange)="onGenderChange()">
           <option value="" disabled selected hidden>Sexe</option>
           <option value="HOMME">Homme</option>
           <option value="FEMME">Femme</option>
@@ -77,18 +97,29 @@
         </select>
       </div>
     </div>
+    <div *ngIf="birthdateError" class="text-danger small mt-1">
+      La date de naissance est obligatoire.
+    </div>
+    <div *ngIf="birthdateFutureError" class="text-danger small mt-1">
+      La date de naissance ne peut pas être dans le futur.
+    </div>
+    <div *ngIf="birthdateTooYoungError" class="text-danger small mt-1">
+      Vous devez avoir au moins 16 ans pour vous inscrire.
+    </div>
+    <div *ngIf="genderError" class="text-danger small mt-1">
+      Le sexe est obligatoire.
+    </div>
 
     <!-- Conditions -->
     <div class="form-check mb-4">
-      <input class="form-check-input" type="checkbox" [(ngModel)]="acceptCGU" name="acceptCGU" required />
+      <input class="form-check-input" type="checkbox" [(ngModel)]="acceptCGU" name="acceptCGU" required (ngModelChange)="onAcceptCGUChange()" />
       <label class="form-check-label">
         J’accepte les <a href="#" (click)="$event.preventDefault()">CGU (à venir)</a>
       </label>
     </div>
-
-    <!--<div *ngIf="errorMessage" class="error-message">
-      {{ errorMessage }}
-    </div> -->
+    <div *ngIf="acceptCGUError" class="text-danger small mb-3">
+      Vous devez accepter les CGU pour vous inscrire.
+    </div>
 
     <!-- Bouton -->
     <button type="submit" class="btn btn-warning w-100">

@@ -26,11 +26,16 @@ import localeFr from '@angular/common/locales/fr';
 import { LOCALE_ID } from '@angular/core';
 import { NgbDateParserFormatter } from '@ng-bootstrap/ng-bootstrap';
 import { CustomDateParserFormatter } from './utils/custom-date-parser-formatter';
+import { AutoResizeDirective } from './directives/auto-resize.directive';
+
 
 registerLocaleData(localeFr);
 
 @NgModule({
-  declarations: [EventFormComponent, AppComponent, EventListComponent, LoginComponent, NavbarComponent, SignupComponent, ConfirmModalComponent, LoaderComponent, GroupCreateComponent, ForgotPasswordComponent],
+  declarations: [EventFormComponent, AppComponent, EventListComponent, LoginComponent, NavbarComponent, SignupComponent, ConfirmModalComponent, LoaderComponent, GroupCreateComponent, ForgotPasswordComponent,
+    AutoResizeDirective
+  ],
+
   imports: [RouterModule, BrowserAnimationsModule, // OBLIGATOIRE pour ngx-toastr
     ToastrModule.forRoot({
       positionClass: 'toast-bottom-right',
@@ -38,6 +43,7 @@ registerLocaleData(localeFr);
       timeOut: 3000
     }),
     BrowserModule, HttpClientModule, FormsModule, AppRoutingModule, NgbModule],
+
   providers: [  {
     provide: HTTP_INTERCEPTORS,
     useClass: AuthInterceptor,

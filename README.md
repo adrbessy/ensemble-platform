@@ -23,7 +23,7 @@ Page d'Inscription
     -> son email,
     -> un mot de passe (avec confirmation),
     -> son sexe (homme ou femme ou autre), 
-    -> sa date de naissance.
+    -> sa date de naissance (minimum 16 ans)
     
 Page de connexion
     -> son email,
@@ -62,7 +62,11 @@ Page de création d'une activité :
     -> Nom du lieu, et adresse exacte du lieu (base de données de google map ?). Obligatoire.
     -> Nombre de participants : nombre minimum (facultatif), nombre maximum obligatoire (8 par défaut)
     -> Age minimum et age maximum (facultatif)
-    -> Genres : Parité (par défaut) (50% hommes 50% femmes, si nombre de participants impairs alors différence de +1 ou -1 femme) ou mixte (partité non obligatoire) ou uniquement femmes, ou uniquement hommes.
+    -> Genres : 
+        -> Parité (par défaut) (50% hommes 50% femmes, si nombre de participants impairs alors différence de +1 ou -1 femme),
+        -> mixte (parité non obligatoire)
+        -> uniquement femmes (si on est soi-même une femme),
+        -> uniquement hommes (si on est soi-même un homme).
     -> Visibilité de l'activité : les personnes bloquées ne verront pas l'activité. Choix entre :
         -> Public (par défaut)
         -> Privé - réservé à mes amis
@@ -116,6 +120,10 @@ Page de compte/paramètres
     -> Déconnexion
     -> Désincription possible
 
+Envies spontanées
+    Exprimez une envie (ex. : "jouer au loup") sans créer immédiatement un événement, en précisant la date et la tranche horaire, la parité, l'âge, nombre minimum et max.
+    → Dès qu'il y a un nombre minimal de personnes qui partagent cette même envie, un événement est créé et les personnes y sont rassemblées, une date en commun la plus tôt et un lieu adapté sont proposés, les personnes peuvent bien sûr discuter et changer l'horaire et le lieu, et l'événement est rendu public.
+
 
 Il y aura aussi une application mobile.
 
@@ -125,11 +133,6 @@ Liste des tags : atelier/échange de langues, jeux (inclut jeux de société, je
 Peut-être plus tard :
 
 Voir les personnes qui ont déjà fait des activités ensemble.
-
-Envies spontanées
-    Exprimez une envie (ex. : "jouer au loup") sans créer immédiatement un événement.
-    → L’algorithme vous connecte à d’autres personnes partageant cette même envie.
-    → Vous pouvez ensuite co-organiser ensemble (choisir une date, un lieu, etc.).
 
 Cadre de confiance
     Nombre minimum de participants requis pour valider une activité

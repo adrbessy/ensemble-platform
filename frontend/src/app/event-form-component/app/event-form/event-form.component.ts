@@ -9,6 +9,7 @@ import { GroupService } from 'src/app/services/group.service';
 import { NgbDateStruct } from '@ng-bootstrap/ng-bootstrap';
 import { AfterViewInit, ElementRef, ViewChild } from '@angular/core';
 import { AuthService } from 'src/app/auth.service';
+import { ContactService } from 'src/app/services/contact.service';
 declare var google: any;
 
 interface EventForm {
@@ -27,6 +28,7 @@ interface EventForm {
   genderRequirement?: string; // peut être "Parité", "Mixte", "Homme", "Femme"
   visibility?: string; // peut être "PUBLIC", "GROUP"
   groupId?: string | null; // ID du groupe si visibilité est "GROUP",
+  invitedUserIds?: number[]; // pour "CUSTOM" visibility
   minAge?: number;
   maxAge?: number;
 }
@@ -34,6 +36,7 @@ interface EventForm {
 @Component({
   selector: 'app-event-form',
   templateUrl: './event-form.component.html',
+  styleUrls: ['./event-form.component.css']
 })
 export class EventFormComponent {
 
@@ -52,7 +55,7 @@ export class EventFormComponent {
         const place = autocomplete.getPlace();
         this.event.placeName = place.name;
         this.event.address = place.formatted_address;
-
+        this.event.location = place.formatted_address;
         // ✅ Effacer l'erreur dès qu’un lieu est sélectionné
         this.locationError = false;
       });
@@ -74,6 +77,7 @@ export class EventFormComponent {
     genderRequirement: 'Parité', // ✅ valeur par défaut
     visibility: 'PUBLIC', // 👈 ajout
     groupId: null,          // 👈 ajout,
+    invitedUserIds: [],     // 👈 ajout
     minAge: undefined,     // 👈 ajout
     maxAge: undefined,     // 👈 ajout
   };
@@ -106,6 +110,7 @@ export class EventFormComponent {
   searchTag = '';
 
   myGroups: any[] = [];
+  myContacts: any[] = [];
 
   minDate: NgbDateStruct;
 
@@ -120,11 +125,19 @@ export class EventFormComponent {
   locationError: boolean = false;
   maxParticipantsError: boolean = false;
   minParticipantsError: boolean = false;
+  userAgeOutOfRangeError: boolean = false;
+  minAgeError: boolean = false;
+  groupSelectionError: boolean = false;
+  invitedContactsError: boolean = false;
 
   currentUser: any;
 
+  genderOptions: { value: string; label: string }[] = [];
+
+  currentStep = 1;
+
   constructor(private http: HttpClient, private eventService: EventService, private router: Router, private notificationService: NotificationService,
-  private groupService: GroupService, private authService: AuthService) {
+  private groupService: GroupService, private authService: AuthService, private contactService: ContactService) {
     const today = new Date();
     this.minDate = {
       year: today.getFullYear(),
@@ -152,6 +165,115 @@ export class EventFormComponent {
     if (this.currentUser?.birthDate) {
       this.setDefaultAgeRange();
     }
+
+    const userGender = this.currentUser?.gender; // ex : "Homme", "Femme", "Autre"
+    console.log('Genre de l’utilisateur :', userGender);
+    this.initGenderOptions(userGender);
+
+    this.contactService.getMyContacts().subscribe(contacts => {
+      this.myContacts = contacts;
+    });
+  }
+
+  initGenderOptions(userGender: string): void {
+    const allOptions = [
+      { value: 'Parité', label: '♀️ = ♂️ Parité' },
+      { value: 'Mixte', label: '♀️♂️ Mixte' },
+      { value: 'Femme', label: '♀️ Femmes uniquement' },
+      { value: 'Homme', label: '♂️ Hommes uniquement' },
+    ];
+
+    this.genderOptions = allOptions.filter(option => {
+      if (userGender === 'HOMME' && option.value === 'Femme') return false;
+      if (userGender === 'FEMME' && option.value === 'Homme') return false;
+      return true;
+    });
+  }
+
+  nextStep(): void {
+    this.descriptionError = false;
+    this.tagMissingError = false;
+    this.dateOrTimeMissingError = false;
+    this.dateInPastError = false;
+    this.timeRangeError = false;
+    this.locationError = false;
+
+    // Tag obligatoire
+    if (!this.event.tag || this.event.tag.trim() === '') {
+      this.tagMissingError = true;
+    }
+
+    // Description obligatoire
+    const desc = this.event.description?.trim() || '';
+    if (desc.length < 10 || desc.length > this.maxDescriptionLength) {
+      this.descriptionError = true;
+    }
+
+    // Date + Heure début
+    if (!this.event.date || !this.event.startTime) {
+      this.dateOrTimeMissingError = true;
+    }
+
+    // Date dans le futur
+    if (this.event.date && this.event.startTime && !this.dateOrTimeMissingError) {
+      const [y, m, d] = [this.event.date.year, this.event.date.month - 1, this.event.date.day];
+      const [h, min] = this.event.startTime.split(':').map(Number);
+      const eventDate = new Date(y, m, d, h, min);
+      if (eventDate < new Date()) this.dateInPastError = true;
+    }
+
+    // Heure de fin > début (si endTime renseignée)
+    if (this.event.startTime && this.event.endTime) {
+      const [sh, sm] = this.event.startTime.split(':').map(Number);
+      const [eh, em] = this.event.endTime.split(':').map(Number);
+      const start = new Date(0, 0, 0, sh, sm);
+      const end = new Date(0, 0, 0, eh, em);
+      if (end <= start) this.timeRangeError = true;
+    }
+
+    // Lieu obligatoire
+    if (!this.event.placeName || !this.event.address) {
+      this.locationError = true;
+    }
+
+    // Si aucune erreur : passer à l'étape 2
+    if (!this.descriptionError && !this.tagMissingError && !this.dateOrTimeMissingError && !this.dateInPastError && !this.timeRangeError && !this.locationError) {
+      this.currentStep = 2;
+    }
+  }
+
+  previousStep() {
+    this.currentStep = 1;
+  }
+
+  showEmojiList = false;
+  emojis: string[] = [
+    '😊', '😍', '🎉', '🔥', '❤️', '👍', '🙌', '🥳', '💬', '😎',
+    '🌟', '🍕', '📅', '🎶', '☀️', '🏞️', '🎭', '👥'
+  ];
+  toggleEmojiPanel() {
+    this.showEmojiList = !this.showEmojiList;
+  }
+  addEmoji(emoji: string) {
+    this.event.description = (this.event.description || '') + emoji;
+    this.showEmojiList = false; // facultatif : referme après clic
+  }
+
+  selectedFile: File | null = null;
+  previewUrl: string | null = null;
+
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (!input.files || input.files.length === 0) return;
+
+    const file = input.files[0];
+    this.selectedFile = file;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      this.previewUrl = reader.result as string;
+    };
+    reader.readAsDataURL(file);
   }
 
   getTopTags(limit: number): string[] {
@@ -193,106 +315,112 @@ export class EventFormComponent {
     }
   }
 
-isToday(): boolean {
-  const today = new Date();
-  const selected = this.event.date;
-
-  if (!selected) return false;
-
-  return (
-    selected.year === today.getFullYear() &&
-    selected.month === today.getMonth() + 1 &&
-    selected.day === today.getDate()
-  );
-}
-
-getMinStartTime(): string | null {
-  if (!this.event.date) return null;
-  const today = new Date();
-  const selected = new Date(
-    this.event.date.year,
-    this.event.date.month - 1,
-    this.event.date.day
-  );
-  const isToday = selected.toDateString() === today.toDateString();
-  if (isToday) {
-    const hours = today.getHours().toString().padStart(2, '0');
-    const minutes = today.getMinutes().toString().padStart(2, '0');
-    return `${hours}:${minutes}`;
+  onParticipantsMinChange(): void {
+    if (this.event.minParticipants != null && this.event.minParticipants >= 2 && this.event.minParticipants <= 100) {
+      this.minParticipantsError = false;
+    }
+    const min = this.event.minParticipants;
+    const max = this.event.maxParticipants;
+    if (min != null && max != null && max >= min) {
+      this.participantRangeError = false;
+    } 
   }
-  return null;
-}
 
-getDateFromString(date: string | Date): Date | null {
-  console.log(typeof this.event.date, this.event.date);
-  if (!date) return null;
-  if (date instanceof Date) return date;
-  const [day, month, year] = date.split('/').map(Number);
-  if (!day || !month || !year) return null;
-  return new Date(year, month - 1, day);
-}
+  onParticipantsMaxChange(): void {
+    if (this.event.maxParticipants != null && this.event.maxParticipants >= 2 && this.event.maxParticipants <= 100) {
+      this.maxParticipantsError = false;
+    }
+    const min = this.event.minParticipants;
+    const max = this.event.maxParticipants;
+    if (min != null && max != null && max >= min) {
+      this.participantRangeError = false;
+    }
+  }
+
+  onAgeMinChange(): void {
+    if (this.event.minAge != null && this.event.minAge >= 16) {
+      this.minAgeError = false;
+    }
+    if (this.event.minAge != null && this.event.maxAge != null && this.event.maxAge >= this.event.minAge) {
+      this.ageRangeError = false;
+    }
+    const userAge = this.getUserAge();
+    if (
+      (this.event.minAge != null && userAge >= this.event.minAge) &&
+      (this.event.maxAge != null && userAge <= this.event.maxAge)
+    ) {
+      this.userAgeOutOfRangeError = false;
+    }
+  }
+
+  onAgeMaxChange(): void {
+    if (this.event.maxAge != null && this.event.maxAge >= 16) {
+      this.maxParticipantsError = false;
+    }
+    if (this.event.minAge != null && this.event.maxAge != null && this.event.maxAge >= this.event.minAge) {
+      this.ageRangeError = false;
+    }
+        const userAge = this.getUserAge();
+    if (
+      (this.event.minAge != null && userAge >= this.event.minAge) &&
+      (this.event.maxAge != null && userAge <= this.event.maxAge)
+    ) {
+      this.userAgeOutOfRangeError = false;
+    }
+  }
+
+  onVisibilityChange(): void {
+    this.groupSelectionError = false;
+    this.invitedContactsError = false;
+  }
+
+  isToday(): boolean {
+    const today = new Date();
+    const selected = this.event.date;
+
+    if (!selected) return false;
+
+    return (
+      selected.year === today.getFullYear() &&
+      selected.month === today.getMonth() + 1 &&
+      selected.day === today.getDate()
+    );
+  }
+
+  getMinStartTime(): string | null {
+    if (!this.event.date) return null;
+    const today = new Date();
+    const selected = new Date(
+      this.event.date.year,
+      this.event.date.month - 1,
+      this.event.date.day
+    );
+    const isToday = selected.toDateString() === today.toDateString();
+    if (isToday) {
+      const hours = today.getHours().toString().padStart(2, '0');
+      const minutes = today.getMinutes().toString().padStart(2, '0');
+      return `${hours}:${minutes}`;
+    }
+    return null;
+  }
+
+  getDateFromString(date: string | Date): Date | null {
+    console.log(typeof this.event.date, this.event.date);
+    if (!date) return null;
+    if (date instanceof Date) return date;
+    const [day, month, year] = date.split('/').map(Number);
+    if (!day || !month || !year) return null;
+    return new Date(year, month - 1, day);
+  }
 
   submitForm() {
-    this.tagMissingError = false;
-    if (!this.event.tag || this.event.tag.trim() === '') {
-      this.tagMissingError = true;
-      return;
-    }
-
-    this.descriptionError = false;
-    if (
-      !this.event.description ||
-      this.event.description.trim().length < 10 ||
-      this.event.description.trim().length > this.maxDescriptionLength
-    ) {
-      this.descriptionError = true;
-      return;
-    }
+    const formData = new FormData();
 
     this.participantRangeError = false;
     const min = this.event.minParticipants;
     const max = this.event.maxParticipants;
     if (min != null && max != null && max < min) {
       this.participantRangeError = true;
-      return;
-    }
-
-    this.dateOrTimeMissingError = false;
-    if (!this.event.date || !this.event.startTime) {
-      this.dateOrTimeMissingError = true;
-      return;
-    }
-
-    if (this.event.date && this.event.startTime) {
-      const [year, month, day] = [
-        this.event.date.year,
-        this.event.date.month - 1, // JavaScript Date: 0 = janvier
-        this.event.date.day
-      ];
-      const [hours, minutes] = this.event.startTime.split(':').map(Number);
-      const eventDateTime = new Date(year, month, day, hours, minutes);
-      const now = new Date();
-      if (eventDateTime < now) {
-        this.dateInPastError = true;
-        return;
-      }
-    }
-
-    this.timeRangeError = false;
-    if (this.event.startTime && this.event.endTime) {
-      const [startHours, startMinutes] = this.event.startTime.split(':').map(Number);
-      const [endHours, endMinutes] = this.event.endTime.split(':').map(Number);
-      const start = new Date(0, 0, 0, startHours, startMinutes);
-      const end = new Date(0, 0, 0, endHours, endMinutes);
-      if (end <= start) {
-        this.timeRangeError = true;
-        return;
-      }
-    }
-
-    this.locationError = false;
-    if (!this.event.placeName || !this.event.address) {
-      this.locationError = true;
       return;
     }
 
@@ -324,8 +452,51 @@ getDateFromString(date: string | Date): Date | null {
       return;
     }
 
+    this.userAgeOutOfRangeError = false;
+    const userAge = this.getUserAge();
+    console.log('Âge de l’utilisateur :', userAge);
+    if (
+      (this.event.minAge != null && userAge < this.event.minAge) ||
+      (this.event.maxAge != null && userAge > this.event.maxAge)
+    ) {
+      this.userAgeOutOfRangeError = true;
+      return;
+    }
+    this.minAgeError = false;
+    if (this.event.minAge != null && (this.event.minAge < 16)) {
+      this.minAgeError = true;
+      return;
+    }
+
+    if (this.event.visibility === 'GROUP' && !this.event.groupId) {
+      this.groupSelectionError = true;
+      return;
+    }
+
+    if (this.event.visibility === 'CUSTOM' && (!this.event.invitedUserIds || this.event.invitedUserIds.length === 0)) {
+      this.invitedContactsError = true;
+      return;
+    }
+
+    const dto = {
+      ...this.event,
+      date: `${this.event.date.year}-${String(this.event.date.month).padStart(2, '0')}-${String(this.event.date.day).padStart(2, '0')}`
+    };
+
+
+    console.log('Location envoyée :', this.event.location);
+
+    // Ajouter l'objet EventForm comme champ JSON
+    formData.append('event', new Blob([JSON.stringify(dto)], { type: 'application/json' }));
+
+    // Ajouter le fichier image si présent
+    if (this.selectedFile) {
+      formData.append('image', this.selectedFile);
+    }
+
     this.loading = true;
-    this.http.post(`${environment.apiUrl}/api/events`, this.event)
+
+    this.http.post(`${environment.apiUrl}/events`, formData)
       .subscribe({
         next: () => {
         // ✅ Affiche le message
@@ -351,6 +522,7 @@ getDateFromString(date: string | Date): Date | null {
             genderRequirement: 'Parité',
             visibility: 'PUBLIC',
             groupId: null, // Réinitialise le groupe sélectionné
+            invitedUserIds: [],
             startTime: '',
             endTime: '' // Réinitialise les heures de début et de fin
           };
@@ -393,11 +565,33 @@ getDateFromString(date: string | Date): Date | null {
       age -= 1;
     }
 
-    const minAge = Math.max(13, age - 10);
+
+    const minAge = Math.max(16, age - 10);
     const maxAge = Math.min(100, age + 10);
 
-    this.event.minAge = minAge;
+    if (age > 20) {
+      this.event.minAge = 18;
+    } else {
+      this.event.minAge = minAge;
+    }
     this.event.maxAge = maxAge;
+  }
+
+    getUserAge(): number {
+    const birthDate = new Date(this.currentUser.birthDate); // YYYY-MM-DD
+    const today = new Date();
+
+    let age = today.getFullYear() - birthDate.getFullYear();
+    console.log('Date de naissance de l’utilisateur :', birthDate);
+    const hasHadBirthday =
+      today.getMonth() > birthDate.getMonth() ||
+      (today.getMonth() === birthDate.getMonth() && today.getDate() >= birthDate.getDate());
+
+    if (!hasHadBirthday) {
+      age--;
+    }
+
+    return age;
   }
 
 }

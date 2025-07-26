@@ -40,6 +40,14 @@ public class User {
     @JsonBackReference // pour éviter les boucles infinies
     private List<Event> events;
 
+    @ManyToMany
+    @JoinTable(
+            name = "user_contacts",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "contact_id")
+    )
+    private Set<User> contacts = new HashSet<>();
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

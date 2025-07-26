@@ -42,7 +42,8 @@ public class SecurityConfig {
                                 "/h2-console/**",
                                 "/uploads/photos/**"
                         ).permitAll()
-                        .requestMatchers("/api/events/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/events/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/events").authenticated()
                         .requestMatchers("/api/groups/**").authenticated()
                         .requestMatchers("/api/users/**").authenticated()
 
