@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class EventService {
@@ -56,8 +57,33 @@ public class EventService {
         return eventRepository.findByVisibility(visibility);
     }
 
-    public List<Event> findVisibleEvents(List<Group> groups) {
-        return eventRepository.findByVisibilityOrGroupIn(EventVisibility.PUBLIC, groups);
+    public List<Event> findVisibleEvents(User user, List<Group> userGroups) {
+        List<Event> allEvents = eventRepository.findAll();
+
+        return allEvents.stream()
+                .filter(event -> {
+                    // ✅ Toujours visible si public
+                    if (event.getVisibility() == EventVisibility.PUBLIC) return true;
+
+                    // ✅ Visible si créateur
+                    if (event.getOrganizer().getId().equals(user.getId())) return true;
+
+                    // ✅ Visible si groupe et utilisateur membre du groupe
+                    if (event.getVisibility() == EventVisibility.GROUP &&
+                            event.getGroup() != null &&
+                            userGroups.stream().anyMatch(g -> g.getId().equals(event.getGroup().getId()))) {
+                        return true;
+                    }
+
+                    // ✅ Visible si FRIENDS_ONLY et l’organisateur est un ami (à implémenter si nécessaire)
+                    if (event.getVisibility() == EventVisibility.FRIENDS_ONLY) {
+                        return true; // ou une logique réelle de friendship
+                    }
+
+                    // ❌ Sinon, non visible
+                    return false;
+                })
+                .collect(Collectors.toList());
     }
 
 

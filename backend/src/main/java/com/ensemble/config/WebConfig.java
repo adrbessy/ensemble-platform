@@ -10,8 +10,14 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        registry.addResourceHandler("/uploads/photos/**")
+        registry
+                .addResourceHandler("/uploads/photos/**")
                 .addResourceLocations("file:" + System.getProperty("user.dir") + "/uploads/photos/");
+
+        // ✅ Ajoute ce handler pour les images des participants
+        registry
+                .addResourceHandler("/uploads/images/**")
+                .addResourceLocations("file:" + System.getProperty("user.dir") + "/uploads/images/");
     }
 
 }

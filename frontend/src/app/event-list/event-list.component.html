@@ -1,4 +1,4 @@
-<h2 class="mb-4">Événements à venir</h2>
+<h2 class="mb-4">Activités à venir</h2>
 
 <!-- 🧩 Bloc de filtres -->
 <div *ngIf="showFilters" class="card mb-3 p-3">
@@ -53,88 +53,87 @@
 </div>
 
 <!-- 📦 Container -->
-<div class="container-xl mt-4" style="max-width: 1200px;">
+<div class="container mt-4 d-flex flex-column align-items-center">
   <div class="row g-3">
-    <div *ngFor="let event of filteredEvents" class="col-12 col-sm-6 col-lg-4">
-      
-      <!-- 🧱 Carte complète -->
-      <div class="card h-100 d-flex flex-column">
-        <div class="card-body flex-grow-1 d-flex flex-column justify-content-between">
-          
-          <div>
-            <h5 class="card-title text-truncate" [title]="event.title">{{ event.title }}</h5>
-            <div class="position-absolute top-0 end-0 m-2">
-              <span class="badge bg-warning" *ngIf="event.visibility === 'GROUP'">🔒 Privé</span>
-              <span class="badge bg-success" *ngIf="event.visibility === 'PUBLIC'">🌐 Public</span>
+
+<div *ngFor="let group of groupedEvents" class="group-wrapper mb-5">
+  <!-- 📅 Date sticky -->
+  <div class="date-sticky">
+    <i class="bi bi-calendar-event me-2 text-primary"></i>
+    {{ group.date | date: 'fullDate' }}
+  </div>
+
+  <!-- 🧩 Colonne événements -->
+  <div class="group-events">
+    <div *ngFor="let event of group.events" class="event-card custom-card mb-4 p-3 border rounded shadow-sm bg-white">
+            <div class="event-card custom-card mb-4 p-3 border rounded shadow-sm bg-white">
+
+        <!-- 📍 Lieu en haut à droite + 🕒 Heure à gauche -->
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <div class="text-muted fw-bold">
+              <i class="bi bi-clock-fill me-1"></i>
+              {{ formatHourRange(event.startTime, event.endTime) }}
             </div>
-            <h6 class="card-subtitle mb-2 text-muted">
-              📅 {{ event.date }} |
-              📍 {{ event.location }}
-            </h6>
-            <p class="card-text text-truncate" title="{{ event.description }}">
-              {{ event.description.length > 100
-              ? (event.description | slice:0:100) + '...'
-              : event.description }}
-            </p>
-            <div class="mb-2">
-              <span class="badge bg-secondary">{{ event.tag }}</span>
+            <div class="text-end text-muted">
+              <i class="bi bi-geo-alt-fill text-danger me-1"></i>
+              <span class="fw-bold text-uppercase">{{ extractCity(event.location) || 'Lieu inconnu' }}</span>
+              <small *ngIf="event.placeName"> ({{ event.placeName }})</small>
             </div>
-            <p>
-              👤 <strong>{{ event.organizer.username }}</strong>
-            </p>
-            <small class="text-muted">
-              {{ event.participants?.length || 0 }} inscrit{{ event.participants?.length === 1 ? '' : 's' }}
-            </small>
           </div>
 
-          <!-- 👥 Participants -->
-          <div class="mt-2">
-            <small class="text-muted">Participants :</small>
-            <div *ngIf="event.participants && event.participants.length > 0; else noParticipants">
-              <ng-container *ngFor="let p of event.participants">
-                <span class="badge me-1"
-                      [ngClass]="p.id === currentUserId ? 'bg-primary' : 'bg-secondary'">
-                  {{ p.username || 'toi' }}
-                </span>
-              </ng-container>
-            </div>
-            <ng-template #noParticipants>
-              <small>Aucun participant</small>
-            </ng-template>
+          <div class="d-flex align-items-center flex-wrap gap-2 mb-2">
+            <h4 class="fw-bold text-dark mb-0 me-2">{{ event.tag }}</h4>
+            <span class="badge"
+                  [ngClass]="{
+                    'badge-public': event.visibility === 'PUBLIC',
+                    'badge-group': event.visibility === 'GROUP',
+                    'badge-friends': event.visibility === 'FRIENDS_ONLY',
+                    'badge-custom': event.visibility === 'CUSTOM'
+                  }">
+              {{
+                event.visibility === 'PUBLIC' ? 'Public' :
+                event.visibility === 'GROUP' ? 'Groupe' :
+                event.visibility === 'FRIENDS_ONLY' ? 'Privé amis' :
+                'Sur invitation'
+              }}
+            </span>
           </div>
-        </div>
 
-        <!-- 🎯 Boutons bas de carte -->
-        <div class="card-footer mt-auto text-end">
-          <!-- Bouton visible uniquement si l'utilisateur est connecté et non inscrit -->
-          <button
-            *ngIf="authService.isLoggedIn() && !hasUserParticipated(event)"
-            class="btn btn-outline-primary w-100"
-            (click)="participate(event)"
-          >
-            Participer
-          </button>
+          <!-- 📝 Description -->
+          <p>{{ event.description }}</p>
 
-          <!-- Lien visible si l'utilisateur n'est pas connecté -->
-          <a
-            *ngIf="!authService.isLoggedIn()"
-            routerLink="/login"
-            class="btn btn-outline-secondary w-100"
-          >
-            Connecte-toi pour participer
-          </a>
+          <!-- 👇 Footer aligné bas droite -->
+        <div class="d-flex justify-content-end align-items-center gap-3 mt-3">
+            <div class="d-flex align-items-center gap-2">
+  <!-- Avatars -->
+  <div class="d-flex">
+    <img *ngFor="let p of event.participants.slice(0, 3)"
+         [src]="'http://localhost:8080/uploads/photos/' + p.photoFilename"
+         class="rounded-circle me-1"
+         alt="avatar"
+         width="32"
+         height="32"
+         onerror="this.src='assets/default-avatar.png'">
+  </div>
+  <!-- Nombre -->
+  <div class="text-muted">
+    <i class="bi bi-people-fill me-1"></i>
+    {{ event.participants?.length || 0 }}/{{ event.maxParticipants }}
+  </div>
+</div>
 
-          <!-- Bouton pour se désinscrire si déjà inscrit -->
-          <button
-            *ngIf="authService.isLoggedIn() && hasUserParticipated(event)"
-            class="btn btn-outline-danger w-100"
-            (click)="withdraw(event)"
-          >
-            Se désinscrire
-          </button>
+
+            <button *ngIf="hasUserParticipated(event)" (click)="withdraw(event)" class="btn btn-danger btn-sm">
+              Se désinscrire
+            </button>
+            <button *ngIf="!hasUserParticipated(event)" (click)="participate(event)" class="btn btn-primary btn-sm">
+              Participer
+            </button>
+          </div>
         </div>
       </div>
 
     </div>
+
   </div>
 </div>

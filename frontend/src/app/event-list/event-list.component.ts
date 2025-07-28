@@ -13,6 +13,7 @@ import { GroupService } from '../services/group.service';
 @Component({
   selector: 'app-event-list',
   templateUrl: './event-list.component.html'
+  , styleUrls: ['./event-list.component.css']
 })
 export class EventListComponent implements OnInit {
   allEvents: any[] = [];
@@ -28,6 +29,7 @@ export class EventListComponent implements OnInit {
 
   onlyMyGroups = false;
   myGroupIds: number[] = [];
+  groupedEvents: { date: string, events: any[] }[] = [];
 
   constructor(private http: HttpClient, private eventService: EventService, private authService: AuthService, private modalService: NgbModal,
   private notificationService: NotificationService, private groupService: GroupService) {
@@ -60,12 +62,65 @@ ngOnInit(): void {
 
   loadEvents(): void {
     this.eventService.getEvents().subscribe(events => {
-      this.allEvents = events;
+      console.log("Événements reçus depuis l’API :", events);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0); // 🔧 pour ignorer l'heure
+
+      const futureEvents = events.filter(e => {
+        const eventDate = new Date(e.date);
+        return eventDate >= today;
+      });
+
+      futureEvents.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+      this.allEvents = futureEvents;
       this.events = [...this.allEvents];
+      this.filteredEvents = [...this.events];
+
+      this.groupEventsByDate();
+
       this.allEvents.forEach(event => {
-        console.log('Tags de l’événement :', event.title, event.tags);
+        console.log(`Participants de l'événement "${event.title}":`, event.participants);
       });
     });
+  }
+
+  getPhotoUrl(filename: string): string {
+    if (!filename) return 'assets/default-avatar.png';
+    return `http://localhost:8080/uploads/images/${filename}`;
+  }
+
+
+  formatTimeRange(startTime: string, endTime: string): string {
+    if (!startTime) return '';
+    const [sh, sm] = startTime.split(':');
+    const start = `${sh}h${sm !== '00' ? sm : ''}`;
+
+    if (!endTime) return `à partir de ${start}`;
+    const [eh, em] = endTime.split(':');
+    const end = `${eh}h${em !== '00' ? em : ''}`;
+
+    return `de ${start} à ${end}`;
+  }
+
+  formatHourRange(startTime: string, endTime?: string): string {
+    if (!startTime) return '';
+    const format = (time: string) => {
+      const [h, m] = time.split(':');
+      return `${h}:${m}`;
+    };
+    const start = format(startTime);
+    const end = endTime ? format(endTime) : '';
+    return end ? `${start} → ${end}` : `${start}`;
+  }
+
+  extractCity(address: string | undefined | null): string {
+    console.log("Adresse reçue :", address);
+    if (!address) return '';  // ⛔️ Si address est null ou vide, on renvoie une chaîne vide
+    const parts = address.split(',');
+    const lastPart = parts[parts.length - 2] || parts[parts.length - 1] || '';
+    const cityMatch = lastPart.match(/\d{5}\s(.+)/);
+    return cityMatch ? cityMatch[1].trim() : lastPart.trim();
   }
 
   hasUserParticipated(event: any): boolean {
@@ -80,11 +135,12 @@ ngOnInit(): void {
 
     this.eventService.participate(event.id).subscribe({
       next: () => {
-        // Simulation locale si tu ne veux pas recharger
+        const user = this.authService.getCurrentUser();
         event.participants = event.participants || [];
         event.participants.push({
-        id: this.currentUserId,
-        username: 'toi',
+          id: user.id,
+          username: user.username,
+          photoFilename: user.photoFilename
         });
         this.notificationService.success("Inscription réussie !");
       },
@@ -123,16 +179,40 @@ ngOnInit(): void {
   }
 
   applyFilters() {
-    this.loadEvents(); // ou une version filtrée selon `onlyWithRemainingSpots`
     this.filteredEvents = this.events.filter(e => {
-    const hasPlaces = !this.onlyWithRemainingSpots || (e.participants?.length || 0) < e.maxParticipants;
-    const matchesTags = this.selectedTags.length === 0 || this.selectedTags.includes(e.tag);
-    const matchesDate = !this.selectedDate || new Date(e.date) >= new Date(this.selectedDate);
-    const matchesGroup = !this.onlyMyGroups || !e.group || this.myGroupIds.includes(e.group.id);
+      const hasPlaces = !this.onlyWithRemainingSpots || (e.participants?.length || 0) < e.maxParticipants;
+      const matchesTags = this.selectedTags.length === 0 || this.selectedTags.includes(e.tag);
+      const matchesDate = !this.selectedDate || new Date(e.date) >= new Date(this.selectedDate);
+      const matchesGroup = !this.onlyMyGroups || !e.group || this.myGroupIds.includes(e.group.id);
+      return hasPlaces && matchesTags && matchesDate && matchesGroup;
+    });
 
-    return hasPlaces && matchesTags && matchesDate && matchesGroup;
-  });
+    this.groupEventsByDate(); // nouvelle méthode juste en dessous
   }
+
+  groupEventsByDate() {
+    const grouped = new Map<string, any[]>();
+
+    this.filteredEvents.forEach(event => {
+      const dateStr = new Date(event.date).toDateString();
+      if (!grouped.has(dateStr)) {
+        grouped.set(dateStr, []);
+      }
+      grouped.get(dateStr)!.push(event);
+    });
+
+    this.groupedEvents = Array.from(grouped.entries())
+      .map(([date, events]) => ({
+        date,
+        events: events.sort((a, b) => {
+          const aTime = a.startTime ? a.startTime.split(':').map(Number) : [0, 0];
+          const bTime = b.startTime ? b.startTime.split(':').map(Number) : [0, 0];
+          return aTime[0] - bTime[0] || aTime[1] - bTime[1];
+        })
+      }))
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  }
+
 
   toggleFiltersPanel() {
     this.showFilters = !this.showFilters;

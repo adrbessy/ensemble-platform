@@ -33,3 +33,4 @@ maquettes/
 personnesTest/
 backend/uploads/photos/
 frontend/src/index.html
+frontend/dist/

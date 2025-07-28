@@ -39,9 +39,10 @@ public class SecurityConfig {
                                 "/",
                                 "/api/auth/login",
                                 "/api/auth/signup",
-                                "/h2-console/**",
-                                "/uploads/photos/**"
+                                "/h2-console/**"
                         ).permitAll()
+                        .requestMatchers(HttpMethod.GET, "/uploads/photos/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/uploads/images/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/events/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/events").authenticated()
                         .requestMatchers("/api/groups/**").authenticated()

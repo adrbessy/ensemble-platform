@@ -11,6 +11,7 @@ import { environment } from 'src/environments/environment';
 })
 export class AuthService {
   private tokenKey = 'token';
+  private currentUser: any = null;
 
   constructor(private http: HttpClient, private notificationService: NotificationService, private router: Router) {}
 
@@ -29,11 +30,13 @@ export class AuthService {
   }
 
   logout(): void {
-  this.loggedIn$.next(false);
-  localStorage.removeItem(this.tokenKey);
-  this.notificationService.info("Déconnexion réussie.");
-  this.router.navigate(['/login']); // redirection Angular
+    localStorage.removeItem(this.tokenKey);
+    this.currentUser = null;
+    this.loggedIn$.next(false);
+    this.notificationService.info("Déconnexion réussie.");
+    this.router.navigate(['/login']);
   }
+
 
   setLoggedIn(value: boolean): void {
     this.loggedIn$.next(value);
@@ -80,16 +83,28 @@ export class AuthService {
   }
 
   getDecodedToken(): any {
-    const token = localStorage.getItem('token');
-    if (!token) return null;
+    const token = localStorage.getItem(this.tokenKey);
+    if (!token) {
+      this.currentUser = null;
+      return null;
+    }
 
     try {
       const payload = token.split('.')[1];
-      return JSON.parse(atob(payload));
+      this.currentUser = JSON.parse(atob(payload));
+      return this.currentUser;
     } catch (e) {
       console.error('Erreur lors du décodage du token', e);
+      this.currentUser = null;
       return null;
     }
+  }
+
+  getCurrentUser(): any {
+    if (!this.currentUser) {
+      this.getDecodedToken();
+    }
+    return this.currentUser;
   }
   
 

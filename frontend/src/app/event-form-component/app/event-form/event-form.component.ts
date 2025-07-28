@@ -43,7 +43,7 @@ export class EventFormComponent {
   @ViewChild('searchInput', { static: false }) searchInput!: ElementRef;
 
   ngAfterViewInit(): void {
-    setTimeout(() => {
+    this.loadGoogleMaps(() => {
       if (!this.searchInput) return;
 
       const autocomplete = new google.maps.places.Autocomplete(this.searchInput.nativeElement, {
@@ -56,10 +56,24 @@ export class EventFormComponent {
         this.event.placeName = place.name;
         this.event.address = place.formatted_address;
         this.event.location = place.formatted_address;
-        // ✅ Effacer l'erreur dès qu’un lieu est sélectionné
         this.locationError = false;
       });
-    }, 0);
+    });
+  }
+
+  loadGoogleMaps(callback: () => void): void {
+    // Si déjà chargé
+    if ((window as any).google && (window as any).google.maps) {
+      callback();
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${environment.googleApiKey}&libraries=places`;
+    script.async = true;
+    script.defer = true;
+    script.onload = callback;
+    document.body.appendChild(script);
   }
 
   event: EventForm = {
@@ -85,8 +99,9 @@ export class EventFormComponent {
   users: any[] = []; // <--- ici
   successMessage = false;
   allTags: string[] = [
-    'jeux de société', 'bar', 'randonnée', 'plage', 'musée', 'café', 'brunch', 'restaurant', 'concert', 'sport',
-    'atelier de langues', 'bowling', 'escape game', 'cinéma', 'karaoké', 'pique-nique'
+    'Jeux de société', 'Bar', 'Randonnée', 'Plage', 'Musée', 'Café', 'Brunch', 'Restaurant', 'Concert', 'Sport',
+    'Atelier de langues', 'Bowling', 'Escape game', 'Cinéma', 'Karaoké', 'Pique-nique', 'Yoga/méditation/pilates', 'Jogging/Running',
+    'Ping-pong', 'Badminton', 'Tennis', 'Squash', 'Footing', 'Cyclisme', 'Natation', 'Escalade', 'Arts martiaux'
   ];
   tagCounts: { [tag: string]: number } = {
     'jeux de société': 5,
@@ -249,7 +264,7 @@ export class EventFormComponent {
   showEmojiList = false;
   emojis: string[] = [
     '😊', '😍', '🎉', '🔥', '❤️', '👍', '🙌', '🥳', '💬', '😎',
-    '🌟', '🍕', '📅', '🎶', '☀️', '🏞️', '🎭', '👥'
+    '🌟', '🍕', '📅', '🎶', '☀️', '🏞️', '🎭', '👥', '🏃‍♂️', '🏃‍♀️'
   ];
   toggleEmojiPanel() {
     this.showEmojiList = !this.showEmojiList;

@@ -18,19 +18,26 @@ export class NavbarComponent {
   environment = environment;
 
   ngOnInit(): void {
-    this.isUserLoggedIn = this.authService.isLoggedIn();
-    const token = this.authService.getToken();
-    if (token) {
-      try {
-        const decoded: any = jwt_decode(token);
-        this.user = decoded;
-        console.log('Utilisateur décodé :', this.user);
-        console.log('Nom du fichier photo :', this.user?.photoFilename);
-      } catch (error) {
-        console.error('Erreur lors du décodage du token :', error);
+    this.authService.getLoggedIn().subscribe((loggedIn) => {
+      this.isUserLoggedIn = loggedIn;
+      if (loggedIn) {
+        const token = this.authService.getToken();
+        if (token) {
+          try {
+            const decoded: any = jwt_decode(token);
+            this.user = decoded;
+            console.log('Utilisateur décodé :', this.user);
+          } catch (error) {
+            console.error('Erreur décodage token :', error);
+            this.user = null;
+          }
+        }
+      } else {
+        this.user = null; // 👈 nettoie l'ancien utilisateur
       }
-    }
+    });
   }
+
 
   isLoggedIn(): boolean {
     return this.authService.isLoggedIn();

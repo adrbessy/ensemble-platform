@@ -56,7 +56,7 @@ public class EventController {
         User user = userRepo.findByEmail(email).orElseThrow();
         List<Group> userGroups = groupRepository.findByMembers_Id(user.getId());
 
-        return eventService.findVisibleEvents(userGroups);
+        return eventService.findVisibleEvents(user, userGroups);
     }
 
 

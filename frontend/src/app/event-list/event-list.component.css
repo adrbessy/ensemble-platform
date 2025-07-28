@@ -1,0 +1,127 @@
+.event-card {
+  padding: 1.5rem;
+  border: 1px solid #dee2e6;
+  border-radius: 0.5rem;
+  background-color: #fff;
+  margin-bottom: 2rem;
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.05);
+}
+
+.visibility-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.visibility-badge.public {
+  background-color: #e6f4ea;
+  color: #1e7e34;
+}
+
+.visibility-badge.group {
+  background-color: #e7f0fa;
+  color: #0d6efd;
+}
+
+.visibility-badge.custom {
+  background-color: #fce8e6;
+  color: #c82333;
+}
+
+.badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 12px;
+  text-transform: uppercase;
+}
+
+.badge-public {
+  background-color: #d1f5e0;
+  color: #167c4d;
+}
+
+.badge-group {
+  background-color: #d6e9f9;
+  color: #1e5f8f;
+}
+
+.badge-friends {
+  background-color: #ffe2b5;
+  color: #a86b00;
+}
+
+.badge-custom {
+  background-color: #e9ddff;
+  color: #5f3ea6;
+}
+
+.custom-card {
+  width: 100%;
+  max-width: 750px;
+}
+
+/* ✅ Groupe avec date sticky à gauche (desktop) */
+.group-wrapper {
+  position: relative;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+/* 📅 Date sticky */
+.date-sticky {
+  position: sticky;
+  top: 80px;
+  z-index: 10;
+  background: #f8f9fa;
+  padding: 0.5rem 1rem;
+  border-left: 4px solid #0d6efd;
+  border-radius: 0.5rem;
+  font-weight: bold;
+  white-space: nowrap; /* ✅ sur une seule ligne */
+  height: fit-content;
+}
+
+/* ✅ Cartes centrées */
+.group-events {
+  width: 100%;
+  max-width: 750px;
+}
+
+/* 📱 Sur mobile, la date passe au-dessus */
+@media (max-width: 767px) {
+  .group-wrapper {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .date-sticky {
+    position: sticky;
+    top: 60px;
+    width: 100%;
+    max-width: 750px;
+    border-left: none;
+    border-bottom: 2px solid #0d6efd;
+    border-radius: 0;
+    margin-bottom: 1rem;
+  }
+}
+
+
+.avatar {
+  width: 32px;
+  height: 32px;
+  object-fit: cover;
+  margin-left: -8px;
+  z-index: 1;
+  border: 2px solid white;
+}
+
+.avatars img:first-child {
+  margin-left: 0;
+}
