@@ -31,13 +31,14 @@ Page de connexion
     possibilité pour l'utilisateur de regénérer un mot de passe en lui envoyant un mail si il l'a oublié.
 
 Page affichant la liste des activités :
-    -> Affichage des filtres actifs (par défaut "Tous les types d'activités", "tout âges", "< 10km", "parité") + bouton 3 petits points qui mène à la page des filtres.
+    -> Affichage des filtres actifs (par défaut "Tous les types d'activités", "tout âges", "< 10km", "parité") + bouton 3 petits points qui mène à la page des filtres. Si on sélectionne plusieurs filtres, ça doit être des réunions et pas des intersections.
     -> Affichage des événements (avec des places restantes) par date (avec possibilité de cliquer sur la date pour masquer les événements prévus à cette date, si on reclique sur la date, ça les refait apparaître).
     -> Chaque événement a :
         -> Une heure de début (heure de fin facultative)
         -> Lieu (nom du lieu + ville)
         -> Tag (en gros et gras)
         -> Description (si dépasse la taille seulement le début de la description)
+        -> Il faut quelque chose qui nous indique encore plus clairement que l'on est inscrit à l'activité genre un bandeau "Inscrit(e)"
         -> Photos des personnes actuellement inscrites à l'activité
         -> nombre d'inscrits / nombre possibles d'inscrits au maximum (comment est-ce qu'on pourrait afficher l'information du nombre minimal d'inscrits pour que l'activité ait lieu, information qui est facultative).
         -> bouton "participer" (absent si on n'est pas connecté)

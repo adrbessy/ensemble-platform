@@ -11,6 +11,8 @@ public class EventDTO {
     public String description;
     private String placeName;
     public String location;
+    private Double latitude;
+    private Double longitude;
     public LocalDate date;
     private String startTime;
     private String endTime;

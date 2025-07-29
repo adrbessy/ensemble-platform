@@ -80,6 +80,8 @@ public class EventController {
         );
 
         event.setPlaceName(dto.getPlaceName());
+        event.setLatitude(dto.getLatitude());
+        event.setLongitude(dto.getLongitude());
         event.setStartTime(dto.getStartTime());
         event.setEndTime(dto.getEndTime());
         event.setMinParticipants(dto.getMinParticipants());
@@ -139,5 +141,16 @@ public class EventController {
         eventService.withdrawParticipant(eventId, userId);
         return ResponseEntity.ok().build();
     }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<Event> getById(@PathVariable Long id) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String email = auth.getName();
+        User user = userRepo.findByEmail(email).orElseThrow();
+
+        Event event = eventService.findByIdVisibleToUser(id, user);
+        return ResponseEntity.ok(event);
+    }
+
 
 }

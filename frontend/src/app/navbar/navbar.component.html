@@ -1,7 +1,7 @@
 <nav class="navbar navbar-expand-lg bg-light-yellow px-4 py-2 shadow-sm">
   <div class="container-fluid">
     <!-- Logo -->
-    <a class="navbar-brand fw-bold text-dark fs-4" routerLink="/">Chill and Go</a>
+    <a class="navbar-brand fw-bold text-dark fs-4" routerLink="/events">Chill and Go</a>
 
     <!-- Toggle button (mobile) -->
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent">
@@ -14,27 +14,34 @@
         
         <!-- Non connecté -->
         <ng-container *ngIf="!isLoggedIn()">
-          <li class="nav-item">
+          <li class="nav-item" routerLinkActive="active">
             <a class="nav-link" routerLink="/login">Connexion</a>
           </li>
-          <li class="nav-item">
+          <li class="nav-item" routerLinkActive="active">
             <a class="nav-link" routerLink="/signup">Inscription</a>
           </li>
         </ng-container>
 
         <!-- Connecté -->
         <ng-container *ngIf="isLoggedIn()">
-          <li class="nav-item">
-            <a class="nav-link" routerLink="/create-event">Créer une activité</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link d-flex align-items-center gap-1" routerLink="/contacts">
-              <i class="bi bi-people-fill"></i> Contacts
+          <li class="nav-item" routerLinkActive="active">
+            <a class="nav-link" routerLink="/events">
+               Activités
             </a>
           </li>
-          <li class="nav-item">
-            <a class="nav-link d-flex align-items-center gap-1" routerLink="/groupes">
-              <i class="bi bi-journal-text"></i> Groupes
+          <li class="nav-item" routerLinkActive="active">
+            <a class="nav-link" routerLink="/create-event">
+              Créer une activité
+            </a>
+          </li>
+          <li class="nav-item" routerLinkActive="active">
+            <a class="nav-link" routerLink="/contacts">
+              Contacts
+            </a>
+          </li>
+          <li class="nav-item" routerLinkActive="active">
+            <a class="nav-link" routerLink="/groupes">
+               Groupes
             </a>
           </li>
           <button type="button" class="btn btn-outline-danger" *ngIf="isLoggedIn()" (click)="logout()">

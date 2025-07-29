@@ -7,17 +7,20 @@ import { SignupComponent } from './signup/signup.component';
 import { EventFormComponent } from './event-form-component/app/event-form/event-form.component';
 import { GroupCreateComponent } from './group-create/group-create.component';
 import { ForgotPasswordComponent } from './forgot-password/forgot-password.component';
+import { EventDetailComponent } from './event-detail/event-detail.component';
 
 const routes: Routes = [
   { path: '', component: EventListComponent }, // Page d'accueil avec filtres
   { path: 'login', component: LoginComponent },
   { path: 'signup', component: SignupComponent },
+  { path: 'events', component: EventListComponent},
   { path: 'create-group', component: GroupCreateComponent },
   { path: 'create-event', component: EventFormComponent },
   {
     path: 'forgot-password',
     component: ForgotPasswordComponent
   },
+  { path: 'activite/:id', component: EventDetailComponent },
   // Redirection pour toute autre URL
   { path: '**', redirectTo: '', pathMatch: 'full' }
 ];

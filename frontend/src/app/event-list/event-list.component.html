@@ -1,139 +1,176 @@
-<h2 class="mb-4">Activités à venir</h2>
 
-<!-- 🧩 Bloc de filtres -->
-<div *ngIf="showFilters" class="card mb-3 p-3">
-  <h5>Filtres</h5>
-  <div class="form-check">
-    <input
-      type="checkbox"
-      class="form-check-input"
-      [(ngModel)]="onlyWithRemainingSpots"
-      (change)="applyFilters()"
-      id="remainingSpotsCheck"
-    />
-    <label class="form-check-label" for="remainingSpotsCheck">
-      Uniquement les événements avec des places restantes
-    </label>
-  </div>
-
-  <!-- ✅ Checkbox "Mes groupes uniquement" -->
-  <div class="form-check">
-    <input
-      type="checkbox"
-      class="form-check-input"
-      [(ngModel)]="onlyMyGroups"
-      (change)="applyFilters()"
-      id="myGroupsCheck"
-    />
-    <label class="form-check-label" for="myGroupsCheck">
-      Événements de mes groupes uniquement
-    </label>
-  </div>
-
-
-    <!-- 🎯 Filtres tags -->
-  <div class="mb-3">
-    <label class="form-label">Activités</label>
-    <select class="form-select" multiple [(ngModel)]="selectedTags">
-      <option *ngFor="let tag of tags" [value]="tag">{{ tag }}</option>
-    </select>
-  </div>
-
-  <!-- 📅 Filtre date -->
-  <div class="mb-3">
-    <label class="form-label">À partir du :</label>
-    <input type="date" class="form-control" [(ngModel)]="selectedDate">
-  </div>
-
-  <!-- 🔘 Bouton pour appliquer les filtres -->
-  <div class="text-end">
-    <button class="btn btn-primary" (click)="applyFilters()">Filtrer</button>
-  </div>
-
-</div>
-
-<!-- 📦 Container -->
-<div class="container mt-4 d-flex flex-column align-items-center">
-  <div class="row g-3">
-
-<div *ngFor="let group of groupedEvents" class="group-wrapper mb-5">
-  <!-- 📅 Date sticky -->
-  <div class="date-sticky">
-    <i class="bi bi-calendar-event me-2 text-primary"></i>
-    {{ group.date | date: 'fullDate' }}
-  </div>
-
-  <!-- 🧩 Colonne événements -->
-  <div class="group-events">
-    <div *ngFor="let event of group.events" class="event-card custom-card mb-4 p-3 border rounded shadow-sm bg-white">
-            <div class="event-card custom-card mb-4 p-3 border rounded shadow-sm bg-white">
-
-        <!-- 📍 Lieu en haut à droite + 🕒 Heure à gauche -->
-          <div class="d-flex justify-content-between align-items-center mb-2">
-            <div class="text-muted fw-bold">
-              <i class="bi bi-clock-fill me-1"></i>
-              {{ formatHourRange(event.startTime, event.endTime) }}
-            </div>
-            <div class="text-end text-muted">
-              <i class="bi bi-geo-alt-fill text-danger me-1"></i>
-              <span class="fw-bold text-uppercase">{{ extractCity(event.location) || 'Lieu inconnu' }}</span>
-              <small *ngIf="event.placeName"> ({{ event.placeName }})</small>
-            </div>
-          </div>
-
-          <div class="d-flex align-items-center flex-wrap gap-2 mb-2">
-            <h4 class="fw-bold text-dark mb-0 me-2">{{ event.tag }}</h4>
-            <span class="badge"
-                  [ngClass]="{
-                    'badge-public': event.visibility === 'PUBLIC',
-                    'badge-group': event.visibility === 'GROUP',
-                    'badge-friends': event.visibility === 'FRIENDS_ONLY',
-                    'badge-custom': event.visibility === 'CUSTOM'
-                  }">
-              {{
-                event.visibility === 'PUBLIC' ? 'Public' :
-                event.visibility === 'GROUP' ? 'Groupe' :
-                event.visibility === 'FRIENDS_ONLY' ? 'Privé amis' :
-                'Sur invitation'
-              }}
-            </span>
-          </div>
-
-          <!-- 📝 Description -->
-          <p>{{ event.description }}</p>
-
-          <!-- 👇 Footer aligné bas droite -->
-        <div class="d-flex justify-content-end align-items-center gap-3 mt-3">
-            <div class="d-flex align-items-center gap-2">
-  <!-- Avatars -->
-  <div class="d-flex">
-    <img *ngFor="let p of event.participants.slice(0, 3)"
-         [src]="'http://localhost:8080/uploads/photos/' + p.photoFilename"
-         class="rounded-circle me-1"
-         alt="avatar"
-         width="32"
-         height="32"
-         onerror="this.src='assets/default-avatar.png'">
-  </div>
-  <!-- Nombre -->
-  <div class="text-muted">
-    <i class="bi bi-people-fill me-1"></i>
-    {{ event.participants?.length || 0 }}/{{ event.maxParticipants }}
-  </div>
-</div>
-
-
-            <button *ngIf="hasUserParticipated(event)" (click)="withdraw(event)" class="btn btn-danger btn-sm">
-              Se désinscrire
-            </button>
-            <button *ngIf="!hasUserParticipated(event)" (click)="participate(event)" class="btn btn-primary btn-sm">
-              Participer
-            </button>
-          </div>
-        </div>
-      </div>
-
+<!-- 🔍 Barre des filtres actifs -->
+<div class="navbar-secondaire bg-white border-bottom py-2 px-4 shadow-sm small d-flex flex-wrap align-items-center gap-2 sticky-top">
+  
+  <!-- Mes événements (switch) à droite -->
+  <div class="d-flex align-items-center gap-4">
+    <!-- Switch 1 -->
+    <div class="form-check form-switch">
+      <input class="form-check-input" type="checkbox" id="myEventsSwitch"
+            [(ngModel)]="onlyMyEvents" (change)="applyFilters()" />
+      <label class="form-check-label" for="myEventsSwitch">
+        Mes activités
+      </label>
     </div>
 
+    <!-- Switch 2 -->
+    <div class="form-check form-switch">
+      <input class="form-check-input" type="checkbox" id="withFriendsSwitch"
+            [(ngModel)]="onlyWithFriends" (change)="applyFilters()" />
+      <label class="form-check-label" for="withFriendsSwitch">
+        Avec mes amis
+      </label>
+    </div>
+
+    <div class="form-check form-switch">
+      <input
+        class="form-check-input"
+        type="checkbox"
+        id="privateOnlySwitch"
+        [(ngModel)]="onlyPrivate"
+        (change)="applyFilters()"
+      />
+      <label class="form-check-label" for="privateOnlySwitch">
+        Privé
+      </label>
+    </div>
+
+    <!-- Switch 4 : Parité uniquement -->
+    <div class="form-check form-switch">
+      <input
+        class="form-check-input"
+        type="checkbox"
+        id="parityOnlySwitch"
+        [(ngModel)]="onlyParity"
+        (change)="applyFilters()"
+      />
+      <label class="form-check-label" for="parityOnlySwitch">
+        ♀️ = ♂️
+      </label>
+    </div>
+
+    <div class="form-check form-switch">
+      <select
+        class="form-select form-select-sm"
+        name="distance"
+        [(ngModel)]="maxDistanceKm"
+        (change)="onDistanceChanged($event)"
+        style="width: 120px;"
+      >
+        <option [ngValue]="null">Partout</option>
+        <option [ngValue]="5"> < 5 km</option>
+        <option [ngValue]="10"> < 10 km</option>
+        <option [ngValue]="20"> < 20 km</option>
+      </select>
+    </div>
+
+
+  </div>
+
+</div>
+
+
+<!-- 📦 Container -->
+<div class="container-fluid mt-4">
+  <div class="d-flex justify-content-center">
+    <div style="max-width: 850px; width: 100%;">
+
+  <div class="event-groups-wrapper">
+    <div *ngFor="let group of groupedEvents" class="group-wrapper mb-5">
+
+      <!-- 📅 Date sticky -->
+      <div class="date-sticky">
+        <i class="bi bi-calendar-event me-2 text-primary"></i>
+        {{ group.date | date: 'EEEE d MMMM' }}
+      </div>
+
+      <!-- 🧩 Colonne événements -->
+      <div class="group-events">
+        <ng-container *ngFor="let event of group.events">
+          <a [routerLink]="['/activite', event.id]" class="text-decoration-none text-dark">
+          <div *ngIf="event.participants.length < event.maxParticipants || hasUserParticipated(event)" class="event-card custom-card mb-4 p-3 border rounded shadow-sm bg-white">
+
+            <!-- 📍 Lieu en haut à droite + 🕒 Heure à gauche -->
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <div class="text-muted fw-bold">
+                  <i class="bi bi-clock-fill me-1"></i>
+                  {{ formatHourRange(event.startTime, event.endTime) }}
+                </div>
+                <div class="text-end text-muted">
+                  <i class="bi bi-geo-alt-fill text-danger me-1"></i>
+                  <span class="fw-bold text-uppercase">{{ extractCity(event.location) || 'Lieu inconnu' }}</span>
+                  <small *ngIf="event.placeName"> ({{ event.placeName }})</small>
+                </div>
+                <small *ngIf="event.latitude && event.longitude && userLatitude && userLongitude">
+  📍 à ~{{ calculateDistanceKm(userLatitude, userLongitude, event.latitude, event.longitude) | number:'1.0-1' }} km
+</small>
+              </div>
+
+              <div class="d-flex align-items-baseline flex-wrap gap-2 mb-2">
+                <h4 class="fw-bold text-dark mb-0 me-2">{{ event.tag }}</h4>
+
+                <span class="badge-visibility"
+                      [ngClass]="{
+                        'badge-public': event.visibility === 'PUBLIC',
+                        'badge-prive': event.visibility === 'GROUP' || event.visibility === 'FRIENDS_ONLY' || event.visibility === 'CUSTOM'
+                      }">
+                  {{
+                    event.visibility === 'PUBLIC' ? 'Public' :
+                    'Privé'
+                  }}
+                </span>
+              </div>
+
+              <!-- 📝 Description -->
+              <p>{{ event.description }}</p>
+
+              <!-- 👇 Footer aligné bas droite -->
+              <div class="d-flex justify-content-end align-items-center gap-3 mt-3">
+
+                <span *ngIf="event.genderRequirement" class="badge text-dark">
+                  {{
+                    event.genderRequirement === 'Parité' ? '♀️ = ♂️' :
+                    event.genderRequirement === 'Mixte' ? '♀️♂️' :
+                    event.genderRequirement === 'Femme' ? '♀️' :
+                    event.genderRequirement === 'Homme' ? '♂️' :
+                    'Sans contrainte'
+                  }}
+                </span>
+
+                <div class="d-flex align-items-center gap-2">
+                  <!-- Avatars -->
+                  <div class="d-flex">
+                    <ng-container *ngFor="let p of event.participants.slice(0, 6)">
+                      <img [src]="'http://localhost:8080/uploads/photos/' + p.photoFilename"
+                          class="rounded-circle me-1"
+                          alt="avatar"
+                          width="32"
+                          height="32"
+                          onerror="this.src='assets/default-avatar.png'">
+                    </ng-container>
+                    <span *ngIf="event.participants.length > 6" class="badge bg-secondary ms-1">
+                      +{{ event.participants.length - 6 }}
+                    </span>
+                  </div>
+                  <!-- Nombre -->
+                  <div class="text-muted">
+                    <i class="bi bi-people-fill me-1"></i>
+                    {{ event.participants?.length || 0 }}/{{ event.maxParticipants }}
+                  </div>
+                </div>
+
+                <button *ngIf="hasUserParticipated(event)" (click)="withdraw(event); $event.stopPropagation(); $event.preventDefault()" class="btn btn-danger btn-sm">
+                  Se désinscrire
+                </button>
+                <button *ngIf="!hasUserParticipated(event)" (click)="participate(event); $event.stopPropagation(); $event.preventDefault()" class="btn btn-primary btn-sm">
+                  Participer
+                </button>
+              </div>
+            </div>
+          </a>
+        </ng-container>
+
+      </div>
+    </div>
   </div>
 </div>

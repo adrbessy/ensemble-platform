@@ -27,13 +27,15 @@ import { LOCALE_ID } from '@angular/core';
 import { NgbDateParserFormatter } from '@ng-bootstrap/ng-bootstrap';
 import { CustomDateParserFormatter } from './utils/custom-date-parser-formatter';
 import { AutoResizeDirective } from './directives/auto-resize.directive';
+import { EventDetailComponent } from './event-detail/event-detail.component';
 
 
 registerLocaleData(localeFr);
 
 @NgModule({
   declarations: [EventFormComponent, AppComponent, EventListComponent, LoginComponent, NavbarComponent, SignupComponent, ConfirmModalComponent, LoaderComponent, GroupCreateComponent, ForgotPasswordComponent,
-    AutoResizeDirective
+    AutoResizeDirective,
+    EventDetailComponent
   ],
 
   imports: [RouterModule, BrowserAnimationsModule, // OBLIGATOIRE pour ngx-toastr

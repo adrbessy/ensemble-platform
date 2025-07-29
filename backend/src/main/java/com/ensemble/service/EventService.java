@@ -50,8 +50,14 @@ public class EventService {
 
         event.getParticipants().removeIf(user -> user.getId().equals(userId));
 
-        eventRepository.save(event);
+        if (event.getParticipants().isEmpty()) {
+            // 🔥 Supprimer l'événement si plus aucun participant
+            eventRepository.delete(event);
+        } else {
+            eventRepository.save(event);
+        }
     }
+
 
     public List<Event> findByVisibility(EventVisibility visibility) {
         return eventRepository.findByVisibility(visibility);
@@ -75,15 +81,46 @@ public class EventService {
                         return true;
                     }
 
-                    // ✅ Visible si FRIENDS_ONLY et l’organisateur est un ami (à implémenter si nécessaire)
-                    if (event.getVisibility() == EventVisibility.FRIENDS_ONLY) {
-                        return true; // ou une logique réelle de friendship
+                    if (event.getVisibility() == EventVisibility.FRIENDS_ONLY &&
+                            event.getOrganizer().getContacts().contains(user)) {
+                        return true;
                     }
 
                     // ❌ Sinon, non visible
                     return false;
                 })
                 .collect(Collectors.toList());
+    }
+
+    public Event findByIdVisibleToUser(Long id, User user) {
+        Event event = eventRepository.findById(id).orElseThrow();
+
+        if (event.getVisibility() == EventVisibility.PUBLIC) return event;
+
+        if (event.getVisibility() == EventVisibility.FRIENDS_ONLY &&
+                user.getContacts().contains(event.getOrganizer())) {
+            return event;
+        }
+
+        if (event.getVisibility() == EventVisibility.GROUP &&
+                event.getGroup() != null &&
+                event.getGroup().getMembers().contains(user)) {
+            return event;
+        }
+
+        if (event.getVisibility() == EventVisibility.CUSTOM &&
+                event.getInvitedUsers().contains(user)) {
+            return event;
+        }
+
+        if (event.getOrganizer().getId().equals(user.getId())) {
+            return event;
+        }
+
+        System.out.println("⚠️ Utilisateur non autorisé : " + user.getEmail());
+        System.out.println("Visibilité de l'événement : " + event.getVisibility());
+        System.out.println("Organisateur : " + event.getOrganizer().getEmail());
+        throw new RuntimeException("Non autorisé à voir cet événement");
     }
 
 

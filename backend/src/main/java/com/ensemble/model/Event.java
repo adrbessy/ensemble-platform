@@ -21,6 +21,13 @@ public class Event {
     @Column(name = "place_name")
     private String placeName;
     private String location;
+
+    @Column(name = "latitude")
+    private Double latitude;
+
+    @Column(name = "longitude")
+    private Double longitude;
+
     private LocalDate date;
 
     @Column(name = "start_time")
@@ -54,6 +61,15 @@ public class Event {
 
     @ManyToOne
     private Group group;
+
+    @ManyToMany
+    @JoinTable(
+            name = "event_invited_users",
+            joinColumns = @JoinColumn(name = "event_id"),
+            inverseJoinColumns = @JoinColumn(name = "user_id")
+    )
+    @JsonIgnoreProperties({"events"})
+    private List<User> invitedUsers = new ArrayList<>();
 
     public Event() {
         // requis par JPA

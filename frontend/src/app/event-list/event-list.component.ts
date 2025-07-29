@@ -22,6 +22,17 @@ export class EventListComponent implements OnInit {
   currentUserId: number;
   onlyWithRemainingSpots = true;
   @Input() showFilters: boolean = false;
+  selectedVisibility: string = '';
+  selectedGender: string = '';
+  onlyMyEvents: boolean = false;
+  onlyWithFriends: boolean = false;
+  onlyPrivate: boolean = false;
+  onlyParity: boolean = false;
+  villeRecherchee: string = '';
+  selectedCity: string = '';
+
+  userContacts: any[] = []; // les amis
+
 
   tags: string[] = ['jeux de société', 'bar', 'randonnée', 'plage', 'musée', 'café', 'brunch', 'restaurant', 'concert', 'sport'];
   selectedTags: string[] = [];
@@ -31,12 +42,18 @@ export class EventListComponent implements OnInit {
   myGroupIds: number[] = [];
   groupedEvents: { date: string, events: any[] }[] = [];
 
+  userLatitude: number | null = null;
+  userLongitude: number | null = null;
+  maxDistanceKm: number | null = null; // ex: 5, 10 ou 20 km
+
+
   constructor(private http: HttpClient, private eventService: EventService, private authService: AuthService, private modalService: NgbModal,
   private notificationService: NotificationService, private groupService: GroupService) {
     this.currentUserId = this.authService.getCurrentUserId();
   }
 
 ngOnInit(): void {
+
   if (!this.authService.isLoggedIn()) {
     console.warn("Utilisateur non connecté → pas de chargement d'événements");
     return;
@@ -48,7 +65,10 @@ ngOnInit(): void {
     this.loadEvents(); // ✅ rafraîchissement uniquement sur demande
   });
 
-  this.loadEvents(); // ✅ chargement initial
+  /*this.loadEvents().then(() => {
+    console.log("✅ Événements chargés et géocodés");
+  });*/
+  this.loadEvents();
 
   this.groupService.getMyGroups().subscribe({
     next: (groups) => {
@@ -58,18 +78,93 @@ ngOnInit(): void {
       console.error('Erreur chargement groupes :', err);
     }
   });
+
+  const user = this.authService.getCurrentUser();
+  this.userContacts = user.contacts || [];
+
+
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      this.userLatitude = position.coords.latitude;
+      this.userLongitude = position.coords.longitude;
+      console.log("📍 Localisation utilisateur :", this.userLatitude, this.userLongitude);
+      this.applyFilters(); // Recalcule avec les filtres
+    },
+    (error) => {
+      console.warn("Géolocalisation refusée ou indisponible");
+    }
+  );
+
 }
 
-  loadEvents(): void {
-    this.eventService.getEvents().subscribe(events => {
+getCityFromCoordinates(lat: number, lon: number): void {
+  const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`;
+
+  fetch(url)
+    .then(res => res.json())
+    .then(data => {
+      const city = data.address.city || data.address.town || data.address.village || data.address.county;
+      console.log("📍 Ville détectée :", city);
+      this.selectedCity = city; // Tu l'utilises ensuite pour pré-remplir le champ de filtre
+      this.applyFilters();
+    })
+    .catch(err => {
+      console.error("Erreur reverse geocoding :", err);
+    });
+}
+
+
+clearFilter(filter: string): void {
+  switch (filter) {
+    case 'visibility':
+      this.selectedVisibility = '';
+      break;
+    case 'gender':
+      this.selectedGender = '';
+      break;
+    case 'date':
+      this.selectedDate = null;
+      break;
+    case 'myEvents':
+      this.onlyMyEvents = false;
+      break;
+  }
+  this.applyFilters();
+}
+
+  removeTag(tag: string): void {
+    this.selectedTags = this.selectedTags.filter(t => t !== tag);
+    this.applyFilters();
+  }
+
+  async loadEvents(): Promise<void> {
+    this.eventService.getEvents().subscribe(async events => {
       console.log("Événements reçus depuis l’API :", events);
+
       const today = new Date();
-      today.setHours(0, 0, 0, 0); // 🔧 pour ignorer l'heure
+      today.setHours(0, 0, 0, 0);
 
       const futureEvents = events.filter(e => {
         const eventDate = new Date(e.date);
         return eventDate >= today;
       });
+
+      // 🔄 Géocodage si latitude/longitude manquantes
+      /*const geocodePromises = futureEvents.map(async (event) => {
+        if (!event.latitude || !event.longitude) {
+          const coords = await this.getCoordinatesFromAddress(event.location);
+          if (coords) {
+            event.latitude = coords.lat;
+            event.longitude = coords.lon;
+            // on peut aussi reconstruire une string "(lat, lng)" si nécessaire :
+            event.location = `(${coords.lat}, ${coords.lon})`;
+          } else {
+            console.warn(`❌ Impossible de géocoder : ${event.location}`);
+          }
+        }
+      });
+
+      await Promise.all(geocodePromises);*/
 
       futureEvents.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
@@ -78,12 +173,14 @@ ngOnInit(): void {
       this.filteredEvents = [...this.events];
 
       this.groupEventsByDate();
+      this.applyFilters();
 
       this.allEvents.forEach(event => {
         console.log(`Participants de l'événement "${event.title}":`, event.participants);
       });
     });
   }
+
 
   getPhotoUrl(filename: string): string {
     if (!filename) return 'assets/default-avatar.png';
@@ -115,7 +212,6 @@ ngOnInit(): void {
   }
 
   extractCity(address: string | undefined | null): string {
-    console.log("Adresse reçue :", address);
     if (!address) return '';  // ⛔️ Si address est null ou vide, on renvoie une chaîne vide
     const parts = address.split(',');
     const lastPart = parts[parts.length - 2] || parts[parts.length - 1] || '';
@@ -137,6 +233,7 @@ ngOnInit(): void {
       next: () => {
         const user = this.authService.getCurrentUser();
         event.participants = event.participants || [];
+        console.log("Utilisateur connecté :", user);
         event.participants.push({
           id: user.id,
           username: user.username,
@@ -152,7 +249,7 @@ ngOnInit(): void {
   }
 
 
-  withdraw(event: any): void {
+    withdraw(event: any): void {
     const modalRef = this.modalService.open(ConfirmModalComponent);
     modalRef.componentInstance.title = "Désinscription";
     modalRef.componentInstance.message = "Souhaites-tu vraiment te désinscrire de cet événement ?";
@@ -162,9 +259,20 @@ ngOnInit(): void {
         if (result === true) {
           this.eventService.withdrawParticipation(event.id).subscribe({
             next: () => {
-              // Mise à jour locale après désinscription
+              // Retirer l'utilisateur localement
               event.participants = event.participants.filter((user: any) => user.id !== this.currentUserId);
-              this.notificationService.success("Désinscription réussie !");
+
+              if (event.participants.length === 0) {
+                // Supprimer l'événement côté serveur
+                this.eventService.deleteEvent(event.id).subscribe(() => {
+                  this.removeEventFromUI(event.id);
+                  this.notificationService.success("Activité supprimée (aucun participant).");
+                }, error => {
+                  this.notificationService.error("Erreur lors de la suppression de l’activité.");
+                });
+              } else {
+                this.notificationService.success("Désinscription réussie !");
+              }
             },
             error: err => {
               this.notificationService.error("Erreur lors de la désinscription.");
@@ -173,22 +281,156 @@ ngOnInit(): void {
         }
       },
       () => {
-        // Fermeture sans confirmation (fermé ou annulé)
+        // Fermeture du modal sans action
       }
     );
   }
 
-  applyFilters() {
-    this.filteredEvents = this.events.filter(e => {
-      const hasPlaces = !this.onlyWithRemainingSpots || (e.participants?.length || 0) < e.maxParticipants;
-      const matchesTags = this.selectedTags.length === 0 || this.selectedTags.includes(e.tag);
-      const matchesDate = !this.selectedDate || new Date(e.date) >= new Date(this.selectedDate);
-      const matchesGroup = !this.onlyMyGroups || !e.group || this.myGroupIds.includes(e.group.id);
-      return hasPlaces && matchesTags && matchesDate && matchesGroup;
-    });
-
-    this.groupEventsByDate(); // nouvelle méthode juste en dessous
+  removeEventFromUI(eventId: number): void {
+    for (let group of this.groupedEvents) {
+      group.events = group.events.filter(e => e.id !== eventId);
+    }
+    this.groupedEvents = this.groupedEvents.filter(group => group.events.length > 0);
   }
+
+  onDistanceChanged(event: any): void {
+  console.log('📦 Changement de distance détecté :', this.maxDistanceKm, ' | brut:', event?.target?.value);
+  this.applyFilters();
+}
+
+
+  isWithinDistance(event: any, maxKm: number): boolean {
+  if (!this.userLatitude || !this.userLongitude || !event.latitude || !event.longitude) {
+    return true; // si on ne peut pas comparer, on ne filtre pas
+  }
+
+  const R = 6371;
+  const dLat = this.toRad(event.latitude - this.userLatitude);
+  const dLng = this.toRad(event.longitude - this.userLongitude);
+
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(this.toRad(this.userLatitude)) *
+    Math.cos(this.toRad(event.latitude)) *
+    Math.sin(dLng / 2) ** 2;
+
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const d = R * c;
+
+  return d <= maxKm;
+}
+
+
+toRad(deg: number): number {
+  return (deg * Math.PI) / 180;
+}
+
+calculateDistanceKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371;
+  const dLat = this.toRad(lat2 - lat1);
+  const dLon = this.toRad(lon2 - lon1);
+  const a = Math.sin(dLat / 2) ** 2 +
+            Math.cos(this.toRad(lat1)) * Math.cos(this.toRad(lat2)) *
+            Math.sin(dLon / 2) ** 2;
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+
+applyFilters(): void {
+
+  const noOtherFiltersActive =
+    !this.onlyMyEvents &&
+    !this.onlyWithFriends &&
+    !this.onlyPrivate &&
+    !this.onlyParity &&
+    this.selectedTags.length === 0 &&
+    !this.selectedGender &&
+    !this.selectedVisibility &&
+    !this.selectedDate;
+
+  const noFilterActive =
+    !this.onlyMyEvents &&
+    !this.onlyWithFriends &&
+    !this.onlyPrivate &&
+    !this.onlyParity &&
+    this.selectedTags.length === 0 &&
+    !this.selectedGender &&
+    !this.selectedVisibility &&
+    !this.selectedDate &&
+    !this.maxDistanceKm &&
+    !this.villeRecherchee;
+
+  if (noFilterActive) {
+    this.filteredEvents = [...this.allEvents];
+    this.groupEventsByDate();
+    return;
+  }
+
+  this.filteredEvents = this.allEvents.filter(event => {
+    // 🔍 Log de l'événement traité
+    //console.log(`📦 Event: "${event.title}", location: "${event.location}"`);
+
+    const isMyEvent = event.participants?.some(p => p.id === this.currentUserId);
+    const isWithFriend = event.participants?.some(p =>
+      this.userContacts.some(c => c.id === p.id)
+    );
+    const isPrivate = event.visibility && event.visibility !== 'PUBLIC';
+    const isParity = event.genderRequirement === 'Parité';
+    const hasMatchingTag = this.selectedTags.length > 0 && this.selectedTags.includes(event.tag);
+    const matchesGender = this.selectedGender && event.genderRequirement === this.selectedGender;
+    const matchesVisibility = this.selectedVisibility && event.visibility === this.selectedVisibility;
+    const matchesDate = this.selectedDate && new Date(event.date) >= new Date(this.selectedDate);
+    const matchesCity = !this.selectedCity || (event.location && event.location.toLowerCase().includes(this.selectedCity.toLowerCase()));
+    const matchesDistance = !this.maxDistanceKm || (
+      event.latitude != null &&
+      event.longitude != null &&
+      this.userLatitude != null &&
+      this.userLongitude != null &&
+      this.calculateDistanceKm(this.userLatitude, this.userLongitude, event.latitude, event.longitude) <= this.maxDistanceKm
+    );
+
+
+    //const matchesDistance = !this.maxDistanceKm || this.isWithinDistance(event, this.maxDistanceKm);
+    //console.log('Distance filtre activé ? ', this.maxDistanceKm, 'Résultat =', matchesDistance, 'Event:', event.title);
+  return (
+    (
+      (this.onlyMyEvents && isMyEvent) ||
+      (this.onlyWithFriends && isWithFriend) ||
+      (this.onlyPrivate && isPrivate) ||
+      (this.onlyParity && isParity) ||
+      hasMatchingTag ||
+      matchesGender ||
+      matchesVisibility ||
+      matchesDate ||
+      noOtherFiltersActive  // ✅ autorise uniquement la distance
+    ) && matchesDistance
+  );
+    });
+    this.groupEventsByDate();
+  }
+
+
+getCoordinatesFromAddress(address: string): Promise<{ lat: number, lon: number } | null> {
+  const encoded = encodeURIComponent(address);
+  const url = `https://nominatim.openstreetmap.org/search?q=${encoded}&format=json&limit=1`;
+  return fetch(url)
+    .then(res => res.json())
+    .then(results => {
+      if (results.length > 0) {
+        return {
+          lat: parseFloat(results[0].lat),
+          lon: parseFloat(results[0].lon)
+        };
+      }
+      return null;
+    })
+    .catch(err => {
+      console.error('Erreur géocodage :', err);
+      return null;
+    });
+}
+
 
   groupEventsByDate() {
     const grouped = new Map<string, any[]>();

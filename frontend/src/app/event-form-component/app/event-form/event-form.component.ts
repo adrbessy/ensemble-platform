@@ -20,6 +20,8 @@ interface EventForm {
   endTime: string; 
   time?: string;
   location: string;
+  latitude?: number;
+  longitude?: number;
   placeName: string; // 🆕 pour le nom du lieu
   address: string; // 🆕 pour l'adresse
   tag: string; // un seul tag
@@ -57,6 +59,13 @@ export class EventFormComponent {
         this.event.address = place.formatted_address;
         this.event.location = place.formatted_address;
         this.locationError = false;
+        
+        // ➕ Extraire les coordonnées
+        if (place.geometry && place.geometry.location) {
+          this.event.latitude = place.geometry.location.lat();
+          this.event.longitude = place.geometry.location.lng();
+          console.log("📍 Coordonnées enregistrées :", this.event.latitude, this.event.longitude);
+        }
       });
     });
   }
@@ -101,7 +110,7 @@ export class EventFormComponent {
   allTags: string[] = [
     'Jeux de société', 'Bar', 'Randonnée', 'Plage', 'Musée', 'Café', 'Brunch', 'Restaurant', 'Concert', 'Sport',
     'Atelier de langues', 'Bowling', 'Escape game', 'Cinéma', 'Karaoké', 'Pique-nique', 'Yoga/méditation/pilates', 'Jogging/Running',
-    'Ping-pong', 'Badminton', 'Tennis', 'Squash', 'Footing', 'Cyclisme', 'Natation', 'Escalade', 'Arts martiaux'
+    'Ping-pong', 'Badminton', 'Tennis', 'Squash', 'Footing', 'Cyclisme', 'Natation', 'Escalade', 'Arts martiaux', 'Billard', 'Taromancie', 'Photographie', 'Cuisine', 'Bricolage', 'Jardinage', 'Musique', 'Danse', 'Théâtre', 'Peinture/Dessin', 'Écriture/Poésie'
   ];
   tagCounts: { [tag: string]: number } = {
     'jeux de société': 5,
@@ -264,7 +273,7 @@ export class EventFormComponent {
   showEmojiList = false;
   emojis: string[] = [
     '😊', '😍', '🎉', '🔥', '❤️', '👍', '🙌', '🥳', '💬', '😎',
-    '🌟', '🍕', '📅', '🎶', '☀️', '🏞️', '🎭', '👥', '🏃‍♂️', '🏃‍♀️'
+    '🌟', '🍕', '📅', '🎶', '☀️', '🏞️', '🎭', '👥', '🏃‍♂️', '🏃‍♀️', '🃏'
   ];
   toggleEmojiPanel() {
     this.showEmojiList = !this.showEmojiList;
@@ -495,11 +504,14 @@ export class EventFormComponent {
 
     const dto = {
       ...this.event,
-      date: `${this.event.date.year}-${String(this.event.date.month).padStart(2, '0')}-${String(this.event.date.day).padStart(2, '0')}`
+      date: `${this.event.date.year}-${String(this.event.date.month).padStart(2, '0')}-${String(this.event.date.day).padStart(2, '0')}`,
+      latitude: this.event.latitude,
+      longitude: this.event.longitude
     };
 
 
     console.log('Location envoyée :', this.event.location);
+    console.log('Coordonnées à envoyer :', this.event.latitude, this.event.longitude);
 
     // Ajouter l'objet EventForm comme champ JSON
     formData.append('event', new Blob([JSON.stringify(dto)], { type: 'application/json' }));
