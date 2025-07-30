@@ -28,6 +28,7 @@ import { NgbDateParserFormatter } from '@ng-bootstrap/ng-bootstrap';
 import { CustomDateParserFormatter } from './utils/custom-date-parser-formatter';
 import { AutoResizeDirective } from './directives/auto-resize.directive';
 import { EventDetailComponent } from './event-detail/event-detail.component';
+import { MonProfilComponent } from './mon-profil/mon-profil.component';
 
 
 registerLocaleData(localeFr);
@@ -35,7 +36,8 @@ registerLocaleData(localeFr);
 @NgModule({
   declarations: [EventFormComponent, AppComponent, EventListComponent, LoginComponent, NavbarComponent, SignupComponent, ConfirmModalComponent, LoaderComponent, GroupCreateComponent, ForgotPasswordComponent,
     AutoResizeDirective,
-    EventDetailComponent
+    EventDetailComponent,
+    MonProfilComponent
   ],
 
   imports: [RouterModule, BrowserAnimationsModule, // OBLIGATOIRE pour ngx-toastr

@@ -3,11 +3,6 @@
     <!-- Logo -->
     <a class="navbar-brand fw-bold text-dark fs-4" routerLink="/events">Chill and Go</a>
 
-    <!-- Toggle button (mobile) -->
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-
     <!-- Links -->
     <div class="collapse navbar-collapse justify-content-end" id="navbarContent">
       <ul class="navbar-nav align-items-center gap-3">
@@ -44,20 +39,25 @@
                Groupes
             </a>
           </li>
-          <button type="button" class="btn btn-outline-danger" *ngIf="isLoggedIn()" (click)="logout()">
-        Se déconnecter
-        </button>
+
           <!-- Avatar + nom -->
            
-          <li class="nav-item d-flex align-items-center">
-            <img *ngIf="user?.photoFilename"
-            [src]="'http://localhost:8080/uploads/photos/' + user.photoFilename"
-            alt="Profil"
-            class="rounded-circle me-2"
-            width="36"
-            height="36"
-            />
-          </li>
+<li class="nav-item d-flex align-items-center">
+  <a [routerLink]="['/mon-profil']" class="nav-link p-0">
+    <img
+      *ngIf="user?.photoFilename"
+      [src]="'http://localhost:8080/uploads/photos/' + user.photoFilename"
+      alt="Profil"
+      class="rounded-circle"
+      width="36"
+      height="36"
+      style="object-fit: cover; border: 2px solid #ccc;"
+      onerror="this.src='assets/default-avatar.png'"
+    />
+  </a>
+</li>
+
+
         </ng-container>
       </ul>
     </div>

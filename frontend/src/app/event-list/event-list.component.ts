@@ -112,8 +112,6 @@ export class EventListComponent implements OnInit {
   }
 
 
-
-
   get filterMode(): 'distance' | 'locality' {
     return this._filterMode;
   }
@@ -481,21 +479,33 @@ applyFilters(): void {
         :this.cityFilter.trim() !== '' &&
         (event.location && event.location.toLowerCase().includes(this.cityFilter.toLowerCase()))
 
+  const currentUser = this.authService.getCurrentUser();
+
+  const violatesParity = event.genderRequirement === 'Parité' &&
+    !this.hasUserParticipated(event) &&
+    currentUser.gender !== 'AUTRE' &&
+    !this.isParityRespectedAfterJoin(event, currentUser.gender);
+
+  const violatesGenderConstraint = 
+    (event.genderRequirement === 'Homme' && currentUser.gender === 'FEMME') ||
+    (event.genderRequirement === 'Femme' && currentUser.gender === 'HOMME');
+
+  if (violatesParity || violatesGenderConstraint) return false;
 
 
-return (
-  (
-    (this.onlyMyEvents && isMyEvent) ||
-    (this.onlyWithFriends && isWithFriend) ||
-    (this.onlyPrivate && isPrivate) ||
-    (this.onlyParity && isParity) ||
-    hasMatchingTag ||
-    matchesGender ||
-    matchesVisibility ||
-    matchesDate ||
-    noOtherFiltersActive
-  ) && matchesLocation // ← au lieu de matchesDistance
-);
+  return (
+    (
+      (this.onlyMyEvents && isMyEvent) ||
+      (this.onlyWithFriends && isWithFriend) ||
+      (this.onlyPrivate && isPrivate) ||
+      (this.onlyParity && isParity) ||
+      hasMatchingTag ||
+      matchesGender ||
+      matchesVisibility ||
+      matchesDate ||
+      noOtherFiltersActive
+    ) && matchesLocation // ← au lieu de matchesDistance
+  );
     });
     this.groupEventsByDate();
   }
@@ -549,5 +559,33 @@ getCoordinatesFromAddress(address: string): Promise<{ lat: number, lon: number }
   toggleFiltersPanel() {
     this.showFilters = !this.showFilters;
   }
+
+  isParityRespectedAfterJoin(event: any, gender: string): boolean {
+    const maleCount = event.participants.filter((p: any) => p.gender === 'HOMME').length;
+    const femaleCount = event.participants.filter((p: any) => p.gender === 'FEMME').length;
+
+    if (gender === 'HOMME') {
+      return maleCount + 1 <= femaleCount;
+    }
+    if (gender === 'FEMME') {
+      return femaleCount + 1 <= maleCount;
+    }
+
+    // Genre AUTRE : on autorise toujours
+    return true;
+  }
+
+  formatShortDate(dateStr: string): string {
+    const date = new Date(dateStr);
+    const jours = ['Dim.', 'Lun.', 'Mar.', 'Mer.', 'Jeu.', 'Ven.', 'Sam.'];
+    const mois = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
+
+    const jour = jours[date.getDay()];
+    const jourDuMois = date.getDate();
+    const moisTxt = mois[date.getMonth()];
+
+    return `${jour} ${jourDuMois} ${moisTxt}`;
+  }
+
 
 }

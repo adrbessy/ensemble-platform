@@ -67,9 +67,9 @@
                 [(ngModel)]="maxDistanceKm"
                 (change)="applyFilters()"
                 style="width: 100px;">
-          <option [ngValue]="5">5 km</option>
-          <option [ngValue]="10">10 km</option>
-          <option [ngValue]="20">20 km</option>
+          <option [ngValue]="5"> < 5 km </option>
+          <option [ngValue]="10"> < 10 km </option>
+          <option [ngValue]="20"> < 20 km </option>
         </select>
       </ng-container>
 
@@ -98,10 +98,7 @@
 </div>
 
       </ng-container>
-
     </div>
-
-
 
   </div>
 
@@ -127,7 +124,7 @@
       <!-- 📅 Date sticky -->
       <div class="date-sticky">
         <i class="bi bi-calendar-event me-2 text-primary"></i>
-        {{ group.date | date: 'EEEE d MMMM' }}
+        {{ formatShortDate(group.date) }}
       </div>
 
       <!-- 🧩 Colonne événements -->
@@ -165,7 +162,7 @@
               </div>
 
               <!-- 📝 Description -->
-              <p>{{ event.description }}</p>
+              <p class="truncate-description">{{ event.description }}</p>
 
               <!-- 👇 Footer aligné bas droite -->
               <div class="d-flex justify-content-end align-items-center gap-3 mt-3">

@@ -8,6 +8,7 @@ import { EventFormComponent } from './event-form-component/app/event-form/event-
 import { GroupCreateComponent } from './group-create/group-create.component';
 import { ForgotPasswordComponent } from './forgot-password/forgot-password.component';
 import { EventDetailComponent } from './event-detail/event-detail.component';
+import { MonProfilComponent } from './mon-profil/mon-profil.component';
 
 const routes: Routes = [
   { path: '', component: EventListComponent }, // Page d'accueil avec filtres
@@ -19,6 +20,10 @@ const routes: Routes = [
   {
     path: 'forgot-password',
     component: ForgotPasswordComponent
+  },
+  {
+    path: 'mon-profil',
+    component: MonProfilComponent
   },
   { path: 'activite/:id', component: EventDetailComponent },
   // Redirection pour toute autre URL
