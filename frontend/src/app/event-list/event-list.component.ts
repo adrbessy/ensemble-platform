@@ -30,6 +30,130 @@ export class EventListComponent implements OnInit {
   onlyParity: boolean = false;
   villeRecherchee: string = '';
   selectedCity: string = '';
+  cityFilter: string = ''; // Valeur vide par défaut
+  private _filterMode: 'distance' | 'locality' = 'distance';
+  isLoading: boolean = false;
+  geoErrorMessage: string | null = null;
+  isGeoLocating: boolean = false;
+  citySuggestions: string[] = [];
+
+
+  searchCities(term: string): void {
+    if (term.length < 2) {
+      this.citySuggestions = [];
+      return;
+    }
+
+    const url = `https://geo.api.gouv.fr/communes?nom=${encodeURIComponent(term)}&fields=nom&boost=population&limit=5`;
+
+    fetch(url)
+      .then(res => res.json())
+      .then(data => {
+        this.citySuggestions = data.map((c: any) => c.nom);
+      })
+      .catch(err => {
+        console.error("Erreur suggestions villes :", err);
+        this.citySuggestions = [];
+      });
+  }
+
+  selectCity(city: string): void {
+    this.cityFilter = city;
+    this.citySuggestions = [];
+    this.applyFilters();
+  }
+
+  clearCitySuggestions(): void {
+    setTimeout(() => this.citySuggestions = [], 200);
+  }
+  
+  refreshEventsWithLocation(): void {
+    this.isLoading = true;
+
+    const load = () => this.loadEvents();
+
+    if (this.filterMode === 'distance') {
+      const cachedLat = localStorage.getItem('userLatitude');
+      const cachedLng = localStorage.getItem('userLongitude');
+
+      if (cachedLat && cachedLng) {
+        this.userLatitude = parseFloat(cachedLat);
+        this.userLongitude = parseFloat(cachedLng);
+        load();
+        return;
+      }
+
+      this.isGeoLocating = true;
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          this.userLatitude = position.coords.latitude;
+          this.userLongitude = position.coords.longitude;
+
+          // Cache la position
+          localStorage.setItem('userLatitude', this.userLatitude.toString());
+          localStorage.setItem('userLongitude', this.userLongitude.toString());
+
+          this.isGeoLocating = false;
+          load();
+        },
+        (error) => {
+          this.isGeoLocating = false;
+          console.warn("❌ Géolocalisation échouée :", error);
+          this.geoErrorMessage = "La position n’a pas pu être obtenue.";
+          setTimeout(() => this.geoErrorMessage = null, 5000);
+          load();
+        },
+        { timeout: 8000 }
+      );
+    } else {
+      load();
+    }
+  }
+
+
+
+
+  get filterMode(): 'distance' | 'locality' {
+    return this._filterMode;
+  }
+
+  set filterMode(value: 'distance' | 'locality') {
+    this._filterMode = value;
+
+    if (value === 'distance') {
+      this.maxDistanceKm = this.maxDistanceKm || 10;
+
+      // ✅ Évite un appel inutile si déjà localisé
+      if (this.userLatitude && this.userLongitude) {
+        this.applyFilters();
+        return;
+      }
+
+      this.isGeoLocating = true;
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          this.userLatitude = position.coords.latitude;
+          this.userLongitude = position.coords.longitude;
+          this.isGeoLocating = false;
+          this.applyFilters();
+        },
+        (error) => {
+          this.isGeoLocating = false;
+          console.warn("❌ Géolocalisation échouée :", error);
+          this.geoErrorMessage = "La position n’a pas pu être obtenue.";
+          setTimeout(() => this.geoErrorMessage = null, 5000);
+          this.applyFilters();
+        },
+        { timeout: 8000 }
+      );
+    } else {
+      this.applyFilters();
+    }
+  }
+
+
+  selectedCities: string[] = []; // pour les localités tapées
 
   userContacts: any[] = []; // les amis
 
@@ -44,7 +168,7 @@ export class EventListComponent implements OnInit {
 
   userLatitude: number | null = null;
   userLongitude: number | null = null;
-  maxDistanceKm: number | null = null; // ex: 5, 10 ou 20 km
+  maxDistanceKm: number | null = 10; // ex: 5, 10 ou 20 km
 
 
   constructor(private http: HttpClient, private eventService: EventService, private authService: AuthService, private modalService: NgbModal,
@@ -52,50 +176,23 @@ export class EventListComponent implements OnInit {
     this.currentUserId = this.authService.getCurrentUserId();
   }
 
-ngOnInit(): void {
+  ngOnInit(): void {
+    if (!this.authService.isLoggedIn()) return;
 
-  if (!this.authService.isLoggedIn()) {
-    console.warn("Utilisateur non connecté → pas de chargement d'événements");
-    return;
+    this.currentUserId = this.authService.getCurrentUserId();
+    const user = this.authService.getCurrentUser();
+    this.userContacts = user.contacts || [];
+
+    this.refreshEventsWithLocation();
+
+    this.eventService.refreshEvents$.subscribe(() => this.loadEvents());
+
+    this.groupService.getMyGroups().subscribe({
+      next: (groups) => this.myGroupIds = groups.map(g => g.id),
+      error: (err) => console.error('Erreur chargement groupes :', err)
+    });
   }
 
-  this.currentUserId = this.authService.getCurrentUserId();
-
-  this.eventService.refreshEvents$.subscribe(() => {
-    this.loadEvents(); // ✅ rafraîchissement uniquement sur demande
-  });
-
-  /*this.loadEvents().then(() => {
-    console.log("✅ Événements chargés et géocodés");
-  });*/
-  this.loadEvents();
-
-  this.groupService.getMyGroups().subscribe({
-    next: (groups) => {
-      this.myGroupIds = groups.map(g => g.id);
-    },
-    error: (err) => {
-      console.error('Erreur chargement groupes :', err);
-    }
-  });
-
-  const user = this.authService.getCurrentUser();
-  this.userContacts = user.contacts || [];
-
-
-  navigator.geolocation.getCurrentPosition(
-    (position) => {
-      this.userLatitude = position.coords.latitude;
-      this.userLongitude = position.coords.longitude;
-      console.log("📍 Localisation utilisateur :", this.userLatitude, this.userLongitude);
-      this.applyFilters(); // Recalcule avec les filtres
-    },
-    (error) => {
-      console.warn("Géolocalisation refusée ou indisponible");
-    }
-  );
-
-}
 
 getCityFromCoordinates(lat: number, lon: number): void {
   const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`;
@@ -138,48 +235,35 @@ clearFilter(filter: string): void {
   }
 
   async loadEvents(): Promise<void> {
-    this.eventService.getEvents().subscribe(async events => {
-      console.log("Événements reçus depuis l’API :", events);
+    this.isLoading = true;
 
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
+    this.eventService.getEvents().subscribe({
+      next: (events) => {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
 
-      const futureEvents = events.filter(e => {
-        const eventDate = new Date(e.date);
-        return eventDate >= today;
-      });
+        const futureEvents = events
+          .filter(e => e && e.id != null)
+          .filter(e => new Date(e.date) >= today)
+          .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-      // 🔄 Géocodage si latitude/longitude manquantes
-      /*const geocodePromises = futureEvents.map(async (event) => {
-        if (!event.latitude || !event.longitude) {
-          const coords = await this.getCoordinatesFromAddress(event.location);
-          if (coords) {
-            event.latitude = coords.lat;
-            event.longitude = coords.lon;
-            // on peut aussi reconstruire une string "(lat, lng)" si nécessaire :
-            event.location = `(${coords.lat}, ${coords.lon})`;
-          } else {
-            console.warn(`❌ Impossible de géocoder : ${event.location}`);
-          }
-        }
-      });
+        this.allEvents = futureEvents;
+        this.events = [...this.allEvents];
+        this.filteredEvents = [...this.events];
 
-      await Promise.all(geocodePromises);*/
-
-      futureEvents.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-
-      this.allEvents = futureEvents;
-      this.events = [...this.allEvents];
-      this.filteredEvents = [...this.events];
-
-      this.groupEventsByDate();
-      this.applyFilters();
-
-      this.allEvents.forEach(event => {
-        console.log(`Participants de l'événement "${event.title}":`, event.participants);
-      });
+        this.applyFilters(); // premier filtrage sans géoloc
+        this.isLoading = false;
+      },
+      error: error => {
+        console.error('❌ Erreur chargement événements', error);
+        this.isLoading = false;
+      }
     });
   }
+
+
+
+
 
 
   getPhotoUrl(filename: string): string {
@@ -265,7 +349,10 @@ clearFilter(filter: string): void {
               if (event.participants.length === 0) {
                 // Supprimer l'événement côté serveur
                 this.eventService.deleteEvent(event.id).subscribe(() => {
-                  this.removeEventFromUI(event.id);
+                  this.eventService.deleteEvent(event.id).subscribe(() => {
+                    this.loadEvents(); // 🔁 Recharge depuis l’API après suppression
+                    this.notificationService.success("Activité supprimée (aucun participant).");
+                  });
                   this.notificationService.success("Activité supprimée (aucun participant).");
                 }, error => {
                   this.notificationService.error("Erreur lors de la suppression de l’activité.");
@@ -294,9 +381,10 @@ clearFilter(filter: string): void {
   }
 
   onDistanceChanged(event: any): void {
-  console.log('📦 Changement de distance détecté :', this.maxDistanceKm, ' | brut:', event?.target?.value);
-  this.applyFilters();
-}
+    console.log('📦 Changement de distance détecté :', this.maxDistanceKm);
+    this.applyFilters();
+  }
+
 
 
   isWithinDistance(event: any, maxKm: number): boolean {
@@ -381,31 +469,33 @@ applyFilters(): void {
     const matchesGender = this.selectedGender && event.genderRequirement === this.selectedGender;
     const matchesVisibility = this.selectedVisibility && event.visibility === this.selectedVisibility;
     const matchesDate = this.selectedDate && new Date(event.date) >= new Date(this.selectedDate);
-    const matchesCity = !this.selectedCity || (event.location && event.location.toLowerCase().includes(this.selectedCity.toLowerCase()));
-    const matchesDistance = !this.maxDistanceKm || (
-      event.latitude != null &&
-      event.longitude != null &&
-      this.userLatitude != null &&
-      this.userLongitude != null &&
-      this.calculateDistanceKm(this.userLatitude, this.userLongitude, event.latitude, event.longitude) <= this.maxDistanceKm
-    );
+    const matchesLocation =
+      this.filterMode === 'distance'
+        ? (!this.maxDistanceKm || (
+            event.latitude != null &&
+            event.longitude != null &&
+            this.userLatitude != null &&
+            this.userLongitude != null &&
+            this.calculateDistanceKm(this.userLatitude, this.userLongitude, event.latitude, event.longitude) <= this.maxDistanceKm
+          ))
+        :this.cityFilter.trim() !== '' &&
+        (event.location && event.location.toLowerCase().includes(this.cityFilter.toLowerCase()))
 
 
-    //const matchesDistance = !this.maxDistanceKm || this.isWithinDistance(event, this.maxDistanceKm);
-    //console.log('Distance filtre activé ? ', this.maxDistanceKm, 'Résultat =', matchesDistance, 'Event:', event.title);
-  return (
-    (
-      (this.onlyMyEvents && isMyEvent) ||
-      (this.onlyWithFriends && isWithFriend) ||
-      (this.onlyPrivate && isPrivate) ||
-      (this.onlyParity && isParity) ||
-      hasMatchingTag ||
-      matchesGender ||
-      matchesVisibility ||
-      matchesDate ||
-      noOtherFiltersActive  // ✅ autorise uniquement la distance
-    ) && matchesDistance
-  );
+
+return (
+  (
+    (this.onlyMyEvents && isMyEvent) ||
+    (this.onlyWithFriends && isWithFriend) ||
+    (this.onlyPrivate && isPrivate) ||
+    (this.onlyParity && isParity) ||
+    hasMatchingTag ||
+    matchesGender ||
+    matchesVisibility ||
+    matchesDate ||
+    noOtherFiltersActive
+  ) && matchesLocation // ← au lieu de matchesDistance
+);
     });
     this.groupEventsByDate();
   }
