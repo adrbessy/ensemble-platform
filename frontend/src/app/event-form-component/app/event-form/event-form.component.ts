@@ -111,7 +111,8 @@ export class EventFormComponent {
     'Jeux de société', 'Bar', 'Randonnée', 'Plage', 'Musée', 'Café', 'Brunch', 'Restaurant', 'Concert', 'Sport',
     'Atelier de langues', 'Bowling', 'Escape game', 'Cinéma', 'Karaoké', 'Pique-nique', 'Yoga/méditation/pilates', 'Jogging/Running',
     'Ping-pong', 'Badminton', 'Tennis', 'Squash', 'Footing', 'Cyclisme', 'Natation', 'Escalade', 'Arts martiaux', 'Billard', 'Taromancie', 
-    'Photographie', 'Cuisine', 'Bricolage', 'Jardinage', 'Musique', 'Danse', 'Théâtre', 'Peinture/Dessin', 'Écriture/Poésie', 'Apéro', 'Pétanque'
+    'Photographie', 'Cuisine', 'Bricolage', 'Jardinage', 'Musique', 'Danse', 'Théâtre', 'Peinture/Dessin', 'Écriture/Poésie', 'Apéro', 
+    'Pétanque'
   ];
   tagCounts: { [tag: string]: number } = {
     'jeux de société': 5,
@@ -140,7 +141,7 @@ export class EventFormComponent {
   minDate: NgbDateStruct;
 
   descriptionError: boolean = false;
-  maxDescriptionLength = 500;
+  maxDescriptionLength = 1000;
   participantRangeError: boolean = false;
   dateInPastError: boolean = false;
   timeRangeError: boolean = false;
@@ -273,7 +274,7 @@ export class EventFormComponent {
 
   showEmojiList = false;
   emojis: string[] = [
-    '😊', '😍', '🎉', '🔥', '❤️', '👍', '🙌', '🥳', '💬', '😎',
+    '😊', '😍', '😁', '🥳', '😎', '🎉', '🔥', '❤️', '👍', '🙌', '💬',
     '🌟', '🍕', '📅', '🎶', '☀️', '🏞️', '🎭', '👥', '🏃‍♂️', '🏃‍♀️', '🃏', '👋'
   ];
   toggleEmojiPanel() {

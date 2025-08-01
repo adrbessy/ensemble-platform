@@ -1,0 +1,32 @@
+<div class="chat-container">
+  <!-- Liste des conversations -->
+  <div class="sidebar">
+    <h5 class="fw-bold mb-3">Discussions</h5>
+    <div class="conversation" *ngFor="let conv of conversations" (click)="selectConversation(conv)">
+      <div class="avatar"></div>
+      <div class="info">
+        <div class="name">{{ conv.name }}</div>
+        <div class="last-message">{{ conv.lastMessage }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Zone de messages -->
+  <div class="chat-box">
+    <div class="header d-flex justify-content-between align-items-center">
+      <div class="fw-bold">{{ selectedConv?.name }}</div>
+    </div>
+
+    <div class="messages" #messagesContainer>
+      <div *ngFor="let msg of selectedConv?.messages" [class.mine]="msg.senderId === currentUserId" class="message">
+        <span>{{ msg.content }}</span>
+        <small class="text-muted">{{ msg.timestamp | date:'shortTime' }}</small>
+      </div>
+    </div>
+
+    <div class="input-area">
+      <input [(ngModel)]="newMessage" (keydown.enter)="sendMessage()" placeholder="Aa" />
+      <button (click)="sendMessage()" class="btn btn-primary">Envoyer</button>
+    </div>
+  </div>
+</div>

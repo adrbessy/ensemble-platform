@@ -36,6 +36,7 @@ export class EventListComponent implements OnInit {
   geoErrorMessage: string | null = null;
   isGeoLocating: boolean = false;
   citySuggestions: string[] = [];
+  private previousFilters: any = {};
 
 
   searchCities(term: string): void {
@@ -110,6 +111,49 @@ export class EventListComponent implements OnInit {
       load();
     }
   }
+
+onMyActivitiesToggle(): void {
+  if (this.onlyMyEvents) {
+    // 🔒 Sauvegarder les filtres avant de les désactiver
+    this.previousFilters = {
+      onlyWithFriends: this.onlyWithFriends,
+      onlyPrivate: this.onlyPrivate,
+      onlyParity: this.onlyParity,
+      selectedTags: [...this.selectedTags],
+      selectedGender: this.selectedGender,
+      selectedVisibility: this.selectedVisibility,
+      selectedDate: this.selectedDate,
+      cityFilter: this.cityFilter,
+      maxDistanceKm: this.maxDistanceKm,
+      filterMode: this.filterMode
+    };
+
+    // ❌ Désactiver tous les autres filtres
+    this.onlyWithFriends = false;
+    this.onlyPrivate = false;
+    this.onlyParity = false;
+    this.selectedTags = [];
+    this.selectedGender = '';
+    this.selectedVisibility = '';
+    this.selectedDate = null;
+    this.cityFilter = '';
+    this.maxDistanceKm = 10;
+  } else {
+    // 🔄 Restaurer les filtres précédents
+    this.onlyWithFriends = this.previousFilters.onlyWithFriends || false;
+    this.onlyPrivate = this.previousFilters.onlyPrivate || false;
+    this.onlyParity = this.previousFilters.onlyParity || false;
+    this.selectedTags = this.previousFilters.selectedTags || [];
+    this.selectedGender = this.previousFilters.selectedGender || '';
+    this.selectedVisibility = this.previousFilters.selectedVisibility || '';
+    this.selectedDate = this.previousFilters.selectedDate || null;
+    this.cityFilter = this.previousFilters.cityFilter || '';
+    this.maxDistanceKm = this.previousFilters.maxDistanceKm || 10;
+    this.filterMode = this.previousFilters.filterMode || 'distance';
+  }
+
+  this.applyFilters();
+}
 
 
   get filterMode(): 'distance' | 'locality' {
@@ -331,7 +375,7 @@ clearFilter(filter: string): void {
   }
 
 
-    withdraw(event: any): void {
+  withdraw(event: any): void {
     const modalRef = this.modalService.open(ConfirmModalComponent);
     modalRef.componentInstance.title = "Désinscription";
     modalRef.componentInstance.message = "Souhaites-tu vraiment te désinscrire de cet événement ?";
@@ -347,16 +391,14 @@ clearFilter(filter: string): void {
               if (event.participants.length === 0) {
                 // Supprimer l'événement côté serveur
                 this.eventService.deleteEvent(event.id).subscribe(() => {
-                  this.eventService.deleteEvent(event.id).subscribe(() => {
-                    this.loadEvents(); // 🔁 Recharge depuis l’API après suppression
-                    this.notificationService.success("Activité supprimée (aucun participant).");
-                  });
+                  this.loadEvents(); // 🔁 Recharge depuis l’API après suppression
                   this.notificationService.success("Activité supprimée (aucun participant).");
                 }, error => {
                   this.notificationService.error("Erreur lors de la suppression de l’activité.");
                 });
               } else {
                 this.notificationService.success("Désinscription réussie !");
+                this.applyFilters(); // ✅ Mise à jour de l'affichage
               }
             },
             error: err => {
@@ -370,6 +412,7 @@ clearFilter(filter: string): void {
       }
     );
   }
+
 
   removeEventFromUI(eventId: number): void {
     for (let group of this.groupedEvents) {
@@ -422,6 +465,24 @@ calculateDistanceKm(lat1: number, lon1: number, lat2: number, lon2: number): num
   return R * c;
 }
 
+getDistanceToEvent(event: any): number | null {
+  if (
+    this.userLatitude != null &&
+    this.userLongitude != null &&
+    event.latitude != null &&
+    event.longitude != null
+  ) {
+    return this.calculateDistanceKm(
+      this.userLatitude,
+      this.userLongitude,
+      event.latitude,
+      event.longitude
+    );
+  }
+  return null;
+}
+
+
 
 applyFilters(): void {
 
@@ -454,10 +515,18 @@ applyFilters(): void {
   }
 
   this.filteredEvents = this.allEvents.filter(event => {
-    // 🔍 Log de l'événement traité
-    //console.log(`📦 Event: "${event.title}", location: "${event.location}"`);
 
     const isMyEvent = event.participants?.some(p => p.id === this.currentUserId);
+
+    // ⏰ On filtre les événements passés uniquement pour ceux qui ne sont pas inscrits
+    const now = new Date();
+    const eventDate = new Date(event.date);
+    const [h, m] = (event.endTime || event.startTime).split(':').map(Number);
+    eventDate.setHours(h, m, 0, 0);
+    if (eventDate < now && !isMyEvent) {
+      return false;
+    }
+
     const isWithFriend = event.participants?.some(p =>
       this.userContacts.some(c => c.id === p.id)
     );
@@ -480,18 +549,35 @@ applyFilters(): void {
         (event.location && event.location.toLowerCase().includes(this.cityFilter.toLowerCase()))
 
   const currentUser = this.authService.getCurrentUser();
+  const userGender = currentUser.gender;
 
-  const violatesParity = event.genderRequirement === 'Parité' &&
-    !this.hasUserParticipated(event) &&
-    currentUser.gender !== 'AUTRE' &&
-    !this.isParityRespectedAfterJoin(event, currentUser.gender);
+  const isParityEvent = event.genderRequirement === 'Parité';
+  const isUserNotParticipant = !this.hasUserParticipated(event);
+  const max = event.maxParticipants || 0;
+  const currentCount = event.participants.length;
+  const maleCount = event.participants.filter((p: any) => p.gender === 'HOMME').length;
+  const femaleCount = event.participants.filter((p: any) => p.gender === 'FEMME').length;
+  const half = Math.floor(max / 2);
 
+  // ❌ Filtres parité stricts
+  let parityBlocked = false;
+
+  if (isParityEvent && isUserNotParticipant && userGender !== 'AUTRE') {
+    if (currentCount >= max) {
+      parityBlocked = true;
+    } else if (userGender === 'HOMME' && maleCount >= half) {
+      parityBlocked = true;
+    } else if (userGender === 'FEMME' && femaleCount >= half) {
+      parityBlocked = true;
+    }
+  }
+
+  // ❌ Cas contraintes de genre (hors parité)
   const violatesGenderConstraint = 
-    (event.genderRequirement === 'Homme' && currentUser.gender === 'FEMME') ||
-    (event.genderRequirement === 'Femme' && currentUser.gender === 'HOMME');
+    (event.genderRequirement === 'Homme' && userGender === 'FEMME') ||
+    (event.genderRequirement === 'Femme' && userGender === 'HOMME');
 
-  if (violatesParity || violatesGenderConstraint) return false;
-
+  if (parityBlocked || violatesGenderConstraint) return false;
 
   return (
     (
@@ -504,9 +590,10 @@ applyFilters(): void {
       matchesVisibility ||
       matchesDate ||
       noOtherFiltersActive
-    ) && matchesLocation // ← au lieu de matchesDistance
+    ) && (this.onlyMyEvents || matchesLocation)
   );
     });
+    console.log('✔️ Événements filtrés visibles :', this.filteredEvents);
     this.groupEventsByDate();
   }
 
@@ -532,28 +619,36 @@ getCoordinatesFromAddress(address: string): Promise<{ lat: number, lon: number }
 }
 
 
-  groupEventsByDate() {
-    const grouped = new Map<string, any[]>();
+groupEventsByDate() {
+  const grouped = new Map<string, any[]>();
 
-    this.filteredEvents.forEach(event => {
-      const dateStr = new Date(event.date).toDateString();
-      if (!grouped.has(dateStr)) {
-        grouped.set(dateStr, []);
-      }
-      grouped.get(dateStr)!.push(event);
-    });
+  const visibleEvents = this.filteredEvents.filter(e => 
+    e.participants.length < e.maxParticipants || this.hasUserParticipated(e)
+  );
 
-    this.groupedEvents = Array.from(grouped.entries())
-      .map(([date, events]) => ({
-        date,
-        events: events.sort((a, b) => {
-          const aTime = a.startTime ? a.startTime.split(':').map(Number) : [0, 0];
-          const bTime = b.startTime ? b.startTime.split(':').map(Number) : [0, 0];
-          return aTime[0] - bTime[0] || aTime[1] - bTime[1];
-        })
-      }))
-      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-  }
+  visibleEvents.forEach(event => {
+    const dateStr = new Date(event.date).toDateString();
+    if (!grouped.has(dateStr)) {
+      grouped.set(dateStr, []);
+    }
+    grouped.get(dateStr)!.push(event);
+  });
+
+  this.groupedEvents = Array.from(grouped.entries())
+    .map(([date, events]) => ({
+      date,
+      events: events.sort((a, b) => {
+        const aTime = a.startTime ? a.startTime.split(':').map(Number) : [0, 0];
+        const bTime = b.startTime ? b.startTime.split(':').map(Number) : [0, 0];
+        return aTime[0] - bTime[0] || aTime[1] - bTime[1];
+      })
+    }))
+    // 🔴 NE PAS afficher les groupes sans événements
+    .filter(group => group.events.length > 0)
+    // 🟢 Trier par date croissante
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+}
+
 
 
   toggleFiltersPanel() {
@@ -586,6 +681,5 @@ getCoordinatesFromAddress(address: string): Promise<{ lat: number, lon: number }
 
     return `${jour} ${jourDuMois} ${moisTxt}`;
   }
-
 
 }

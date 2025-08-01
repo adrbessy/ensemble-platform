@@ -1,12 +1,14 @@
 <div *ngIf="event" class="container py-4">
-  <h2 class="fw-bold">{{ event.tag }} – {{ event.title }}</h2>
+  <h2 class="fw-bold">{{ event.tag }}</h2>
   <p class="text-muted">
     📅 {{ event.date | date:'fullDate' }} • 🕒 {{ event.startTime }} – {{ event.endTime || '...' }}
   </p>
   <p>
     📍 {{ event.placeName }} ({{ event.location }})<br />
-    👤 Créé par : {{ event.organizer.firstName }}
   </p>
+
+  <div *ngIf="event?.latitude && event?.longitude" id="eventMap" style="height: 300px;"></div>
+
   <p>{{ event.description }}</p>
 
   <hr />
@@ -21,8 +23,18 @@
          onerror="this.src='assets/default-avatar.png'">
   </div>
 
+    <!-- 👇 Affiche le bouton uniquement si l'utilisateur est inscrit -->
+  <div *ngIf="hasUserParticipated(event)">
+    <a [routerLink]="['/chat', event.id]" class="btn btn-primary mt-3">
+      Accéder au chat 💬
+    </a>
+  </div>
+
   <hr />
+
 
   <button class="btn btn-primary" *ngIf="!hasUserParticipated(event)" (click)="participate(event)">Participer</button>
   <button class="btn btn-danger" *ngIf="hasUserParticipated(event)" (click)="withdraw(event)">Se désinscrire</button>
+
+
 </div>

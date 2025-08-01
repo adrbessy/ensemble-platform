@@ -144,3 +144,33 @@ h4 {
   text-overflow: ellipsis;
   max-height: 3em; /* selon la taille de ta font */
 }
+
+.badge-age-range {
+  background-color: #e8eaf6;
+  color: #333;
+  font-size: 0.75rem;
+  padding: 0.3em 0.6em;
+  border-radius: 0.5rem;
+}
+
+/* Style général du bouton */
+.my-activities-toggle {
+  background-color: white;
+  border-color: #0d6efd;
+  color: #0d6efd;
+  transition: all 0.2s ease;
+}
+
+/* Fond blanc même au hover si non activé */
+.my-activities-toggle:hover:not(.active) {
+  background-color: white;
+  color: #0d6efd;
+  border-color: #0d6efd;
+}
+
+/* Si activé (toggle sélectionné), fond bleu + texte blanc */
+.my-activities-toggle.active {
+  background-color: #0d6efd;
+  color: white;
+}
+

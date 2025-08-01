@@ -5,13 +5,24 @@ import { AuthService } from '../auth.service';
 import { ConfirmModalComponent } from '../confirm-modal/confirm-modal.component';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { NotificationService } from '../services/notification.service';
+import * as L from 'leaflet';
+
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png'
+});
 
 @Component({
   selector: 'app-event-detail',
-  templateUrl: './event-detail.component.html'
+  templateUrl: './event-detail.component.html',
+  styleUrls: ['./event-detail.component.css']
 })
 export class EventDetailComponent implements OnInit {
   event: any;
+  map: any;
 
   constructor(
   private route: ActivatedRoute,
@@ -20,14 +31,46 @@ export class EventDetailComponent implements OnInit {
   private router: Router, private modalService: NgbModal,private notificationService: NotificationService
 ) {}
 
+
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
       this.eventService.getEventById(+id).subscribe(event => {
         this.event = event;
+
+        setTimeout(() => {
+          this.initMap();
+        }, 0);
+
       });
     }
   }
+
+  initMap(): void {
+    const lat = this.event?.latitude;
+    const lng = this.event?.longitude;
+
+    if (!lat || !lng) {
+      console.warn("Latitude ou longitude manquantes.");
+      return;
+    }
+
+    const container = document.getElementById('eventMap');
+    if (!container) {
+      console.error("❌ Le conteneur #eventMap est introuvable dans le DOM.");
+      return;
+    }
+
+    this.map = L.map(container).setView([lat, lng], 14);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors'
+    }).addTo(this.map);
+
+    L.marker([lat, lng]).addTo(this.map)
+      .bindPopup(this.event.title || 'Lieu de l’événement');
+  }
+
 
   hasUserParticipated(event: any): boolean {
     const currentUserId = this.authService.getCurrentUserId();

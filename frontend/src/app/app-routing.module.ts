@@ -9,6 +9,7 @@ import { GroupCreateComponent } from './group-create/group-create.component';
 import { ForgotPasswordComponent } from './forgot-password/forgot-password.component';
 import { EventDetailComponent } from './event-detail/event-detail.component';
 import { MonProfilComponent } from './mon-profil/mon-profil.component';
+import { ChatComponent } from './chat/chat.component';
 
 const routes: Routes = [
   { path: '', component: EventListComponent }, // Page d'accueil avec filtres
@@ -17,6 +18,7 @@ const routes: Routes = [
   { path: 'events', component: EventListComponent},
   { path: 'create-group', component: GroupCreateComponent },
   { path: 'create-event', component: EventFormComponent },
+  { path: 'chat/:id', component: ChatComponent },
   {
     path: 'forgot-password',
     component: ForgotPasswordComponent

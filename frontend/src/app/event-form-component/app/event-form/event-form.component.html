@@ -42,7 +42,7 @@
       <!-- Description -->
       <div>
         <label class="form-label fw-bold mt-3">Description</label>
-        <textarea class="form-control" [(ngModel)]="event.description" name="description"
+        <textarea class="form-control" [(ngModel)]="event.description" name="description" maxlength="1000"
           placeholder="Ex: Session libre pour joueurs de tous niveaux" (ngModelChange)="onDescriptionChange()" autoResize
   style="overflow: hidden; resize: none;"></textarea>
         <!-- Bouton pour afficher/masquer les emojis -->
@@ -67,7 +67,7 @@
         </span>
       </div>
       <div class="d-flex justify-content-between small mt-1">
-        <span *ngIf="descriptionError" class="text-danger">La description est obligatoire (10–500 caractères).</span>
+        <span *ngIf="descriptionError" class="text-danger">La description est obligatoire (10–1000 caractères).</span>
       </div>
 
       <div class="row g-3 mt-3">
