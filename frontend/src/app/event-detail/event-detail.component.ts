@@ -133,6 +133,12 @@ export class EventDetailComponent implements OnInit {
     });
   }
 
+  getImageUrl(imageUrl: string): string {
+    if (!imageUrl) return '';
+    return imageUrl.startsWith('/uploads/images/')
+      ? 'http://localhost:8080' + imageUrl
+      : 'http://localhost:8080/uploads/images/' + imageUrl;
+  }
 
 
 }

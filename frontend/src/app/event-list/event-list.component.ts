@@ -1,5 +1,5 @@
 
-import { Component, OnInit } from '@angular/core';
+import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { EventService } from '../event.service';
 import { AuthService } from '../auth.service';
@@ -16,6 +16,10 @@ import { GroupService } from '../services/group.service';
   , styleUrls: ['./event-list.component.css']
 })
 export class EventListComponent implements OnInit {
+  @ViewChild('measureSpan') measureSpan!: ElementRef;
+  @ViewChild('cityInput') cityInput!: ElementRef;
+
+
   allEvents: any[] = [];
   events: any[] = [];
   filteredEvents: any[] = [];
@@ -31,7 +35,7 @@ export class EventListComponent implements OnInit {
   villeRecherchee: string = '';
   selectedCity: string = '';
   cityFilter: string = ''; // Valeur vide par défaut
-  private _filterMode: 'distance' | 'locality' = 'distance';
+  private _filterMode: '<5' | '<10' | '<20' | 'ville' = '<10'; // valeur par défaut
   isLoading: boolean = false;
   geoErrorMessage: string | null = null;
   isGeoLocating: boolean = false;
@@ -40,17 +44,19 @@ export class EventListComponent implements OnInit {
 
 
   searchCities(term: string): void {
-    if (term.length < 2) {
+    if (term.length < 1) {
       this.citySuggestions = [];
       return;
     }
 
-    const url = `https://geo.api.gouv.fr/communes?nom=${encodeURIComponent(term)}&fields=nom&boost=population&limit=5`;
+    const url = `https://geo.api.gouv.fr/communes?nom=${encodeURIComponent(term)}&fields=nom&boost=population&limit=10`;
 
     fetch(url)
       .then(res => res.json())
       .then(data => {
-        this.citySuggestions = data.map((c: any) => c.nom);
+        this.citySuggestions = data
+          .map((c: any) => c.nom)
+          .filter((nom: string) => nom.toLowerCase().startsWith(term.toLowerCase()));
       })
       .catch(err => {
         console.error("Erreur suggestions villes :", err);
@@ -58,9 +64,11 @@ export class EventListComponent implements OnInit {
       });
   }
 
+
   selectCity(city: string): void {
     this.cityFilter = city;
     this.citySuggestions = [];
+    this.adjustWidth(); 
     this.applyFilters();
   }
 
@@ -73,7 +81,7 @@ export class EventListComponent implements OnInit {
 
     const load = () => this.loadEvents();
 
-    if (this.filterMode === 'distance') {
+    if (this.filterMode === '<5' || this.filterMode === '<10' || this.filterMode === '<20') {
       const cachedLat = localStorage.getItem('userLatitude');
       const cachedLng = localStorage.getItem('userLongitude');
 
@@ -149,49 +157,20 @@ onMyActivitiesToggle(): void {
     this.selectedDate = this.previousFilters.selectedDate || null;
     this.cityFilter = this.previousFilters.cityFilter || '';
     this.maxDistanceKm = this.previousFilters.maxDistanceKm || 10;
-    this.filterMode = this.previousFilters.filterMode || 'distance';
+    this.filterMode = this.previousFilters.filterMode || '<10';
   }
 
   this.applyFilters();
 }
 
 
-  get filterMode(): 'distance' | 'locality' {
+  get filterMode(): '<5' | '<10' | '<20' | 'ville' {
     return this._filterMode;
   }
 
-  set filterMode(value: 'distance' | 'locality') {
+  set filterMode(value: '<5' | '<10' | '<20' | 'ville') {
     this._filterMode = value;
-
-    if (value === 'distance') {
-      this.maxDistanceKm = this.maxDistanceKm || 10;
-
-      // ✅ Évite un appel inutile si déjà localisé
-      if (this.userLatitude && this.userLongitude) {
-        this.applyFilters();
-        return;
-      }
-
-      this.isGeoLocating = true;
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          this.userLatitude = position.coords.latitude;
-          this.userLongitude = position.coords.longitude;
-          this.isGeoLocating = false;
-          this.applyFilters();
-        },
-        (error) => {
-          this.isGeoLocating = false;
-          console.warn("❌ Géolocalisation échouée :", error);
-          this.geoErrorMessage = "La position n’a pas pu être obtenue.";
-          setTimeout(() => this.geoErrorMessage = null, 5000);
-          this.applyFilters();
-        },
-        { timeout: 8000 }
-      );
-    } else {
-      this.applyFilters();
-    }
+    this.onLieuFiltreChange();
   }
 
 
@@ -219,20 +198,23 @@ onMyActivitiesToggle(): void {
   }
 
   ngOnInit(): void {
-    if (!this.authService.isLoggedIn()) return;
-
     this.currentUserId = this.authService.getCurrentUserId();
-    const user = this.authService.getCurrentUser();
-    this.userContacts = user.contacts || [];
 
+    if (this.authService.isLoggedIn()) {
+      const user = this.authService.getCurrentUser();
+      this.userContacts = user.contacts || [];
+
+      this.groupService.getMyGroups().subscribe({
+        next: (groups) => this.myGroupIds = groups.map(g => g.id),
+        error: (err) => console.error('Erreur chargement groupes :', err)
+      });
+    }
+
+    // 🔁 Charge les événements même si l’utilisateur n’est pas connecté
     this.refreshEventsWithLocation();
 
+    // 🔄 Toujours écouter le rafraîchissement
     this.eventService.refreshEvents$.subscribe(() => this.loadEvents());
-
-    this.groupService.getMyGroups().subscribe({
-      next: (groups) => this.myGroupIds = groups.map(g => g.id),
-      error: (err) => console.error('Erreur chargement groupes :', err)
-    });
   }
 
 
@@ -482,120 +464,92 @@ getDistanceToEvent(event: any): number | null {
   return null;
 }
 
+  onCityFilterChange(): void {
+    if (this.filterMode === 'ville') {
+      this.searchCities(this.cityFilter);
+      this.applyFilters();  // <= ici le filtre se mettra à jour aussi quand on efface
+    }
+  }
 
 
 applyFilters(): void {
 
-  const noOtherFiltersActive =
-    !this.onlyMyEvents &&
-    !this.onlyWithFriends &&
-    !this.onlyPrivate &&
-    !this.onlyParity &&
-    this.selectedTags.length === 0 &&
-    !this.selectedGender &&
-    !this.selectedVisibility &&
-    !this.selectedDate;
+  console.log('👥 Nombre d’amis :', this.userContacts.length);
+console.log('🔘 Filtre "amis présents" actif :', this.onlyWithFriends);
 
-  const noFilterActive =
-    !this.onlyMyEvents &&
-    !this.onlyWithFriends &&
-    !this.onlyPrivate &&
-    !this.onlyParity &&
-    this.selectedTags.length === 0 &&
-    !this.selectedGender &&
-    !this.selectedVisibility &&
-    !this.selectedDate &&
-    !this.maxDistanceKm &&
-    !this.villeRecherchee;
-
-  if (noFilterActive) {
-    this.filteredEvents = [...this.allEvents];
+  if (this.onlyMyEvents) {
+    this.filteredEvents = this.allEvents.filter(event =>
+      event.participants?.some(p => p.id === this.currentUserId)
+    );
     this.groupEventsByDate();
     return;
   }
 
+  const currentUser = this.authService.getCurrentUser();
+  const userGender = currentUser?.gender || null;
+
   this.filteredEvents = this.allEvents.filter(event => {
-
-    const isMyEvent = event.participants?.some(p => p.id === this.currentUserId);
-
-    // ⏰ On filtre les événements passés uniquement pour ceux qui ne sont pas inscrits
+    // ⏰ Ne pas afficher les événements passés si non inscrit
     const now = new Date();
     const eventDate = new Date(event.date);
     const [h, m] = (event.endTime || event.startTime).split(':').map(Number);
     eventDate.setHours(h, m, 0, 0);
-    if (eventDate < now && !isMyEvent) {
-      return false;
-    }
+    const isMyEvent = event.participants?.some(p => p.id === this.currentUserId);
+    if (eventDate < now && !isMyEvent) return false;
 
+    // 📍 Filtre localisation
+    const matchesLocation = (this.filterMode === 'ville')
+      ? this.extractCity(event.location).toLowerCase() === this.cityFilter.trim().toLowerCase()
+      : this.calculateDistanceKm(this.userLatitude!, this.userLongitude!, event.latitude, event.longitude) <= this.maxDistanceKm!;
+
+    if (!matchesLocation) return false;
+
+    // 🧑‍🤝‍🧑 Amis présents
     const isWithFriend = event.participants?.some(p =>
       this.userContacts.some(c => c.id === p.id)
     );
-    const isPrivate = event.visibility && event.visibility !== 'PUBLIC';
-    const isParity = event.genderRequirement === 'Parité';
-    const hasMatchingTag = this.selectedTags.length > 0 && this.selectedTags.includes(event.tag);
-    const matchesGender = this.selectedGender && event.genderRequirement === this.selectedGender;
-    const matchesVisibility = this.selectedVisibility && event.visibility === this.selectedVisibility;
-    const matchesDate = this.selectedDate && new Date(event.date) >= new Date(this.selectedDate);
-    const matchesLocation =
-      this.filterMode === 'distance'
-        ? (!this.maxDistanceKm || (
-            event.latitude != null &&
-            event.longitude != null &&
-            this.userLatitude != null &&
-            this.userLongitude != null &&
-            this.calculateDistanceKm(this.userLatitude, this.userLongitude, event.latitude, event.longitude) <= this.maxDistanceKm
-          ))
-        :this.cityFilter.trim() !== '' &&
-        (event.location && event.location.toLowerCase().includes(this.cityFilter.toLowerCase()))
 
-  const currentUser = this.authService.getCurrentUser();
-  const userGender = currentUser.gender;
-
-  const isParityEvent = event.genderRequirement === 'Parité';
-  const isUserNotParticipant = !this.hasUserParticipated(event);
-  const max = event.maxParticipants || 0;
-  const currentCount = event.participants.length;
-  const maleCount = event.participants.filter((p: any) => p.gender === 'HOMME').length;
-  const femaleCount = event.participants.filter((p: any) => p.gender === 'FEMME').length;
-  const half = Math.floor(max / 2);
-
-  // ❌ Filtres parité stricts
-  let parityBlocked = false;
-
-  if (isParityEvent && isUserNotParticipant && userGender !== 'AUTRE') {
-    if (currentCount >= max) {
-      parityBlocked = true;
-    } else if (userGender === 'HOMME' && maleCount >= half) {
-      parityBlocked = true;
-    } else if (userGender === 'FEMME' && femaleCount >= half) {
-      parityBlocked = true;
+    // 👥 Si le filtre "amis" est coché seul
+    if (this.onlyWithFriends && !this.onlyParity) {
+      if (this.userContacts.length === 0) return false;
+      if (!isWithFriend) return false;
     }
-  }
 
-  // ❌ Cas contraintes de genre (hors parité)
-  const violatesGenderConstraint = 
-    (event.genderRequirement === 'Homme' && userGender === 'FEMME') ||
-    (event.genderRequirement === 'Femme' && userGender === 'HOMME');
 
-  if (parityBlocked || violatesGenderConstraint) return false;
+    // ♀️♂️ Parité
+    const isParityEvent = event.genderRequirement === 'Parité';
+    const isUserNotParticipant = !this.hasUserParticipated(event);
+    const max = event.maxParticipants || 0;
+    const maleCount = event.participants.filter((p: any) => p.gender === 'HOMME').length;
+    const femaleCount = event.participants.filter((p: any) => p.gender === 'FEMME').length;
+    const half = Math.floor(max / 2);
 
-  return (
-    (
-      (this.onlyMyEvents && isMyEvent) ||
-      (this.onlyWithFriends && isWithFriend) ||
-      (this.onlyPrivate && isPrivate) ||
-      (this.onlyParity && isParity) ||
-      hasMatchingTag ||
-      matchesGender ||
-      matchesVisibility ||
-      matchesDate ||
-      noOtherFiltersActive
-    ) && (this.onlyMyEvents || matchesLocation)
-  );
-    });
-    console.log('✔️ Événements filtrés visibles :', this.filteredEvents);
-    this.groupEventsByDate();
-  }
+    let parityBlocked = false;
+    if (isParityEvent && isUserNotParticipant && userGender !== 'AUTRE') {
+      if (event.participants.length >= max) parityBlocked = true;
+      else if (userGender === 'HOMME' && maleCount >= half) parityBlocked = true;
+      else if (userGender === 'FEMME' && femaleCount >= half) parityBlocked = true;
+    }
+
+    const isParityOk = isParityEvent && !parityBlocked;
+
+    // 🧠 Logique finale : Amis OU Parité
+    if (this.onlyWithFriends && this.onlyParity) {
+      return isWithFriend || isParityOk;
+    } else if (this.onlyWithFriends) {
+      return isWithFriend;
+    } else if (this.onlyParity) {
+      return isParityOk;
+    }
+
+    // Sinon, on montre tout ce qui est dans la zone
+    return true;
+  });
+
+  this.groupEventsByDate();
+}
+
+
 
 
 getCoordinatesFromAddress(address: string): Promise<{ lat: number, lon: number } | null> {
@@ -681,5 +635,55 @@ groupEventsByDate() {
 
     return `${jour} ${jourDuMois} ${moisTxt}`;
   }
+
+  isLoggedIn(): boolean {
+    return this.authService.isLoggedIn();
+  }
+
+  onLieuFiltreChange(): void {
+    // Reset les valeurs au changement
+    if (this.filterMode === '<5') this.maxDistanceKm = 5;
+    else if (this.filterMode === '<10') this.maxDistanceKm = 10;
+    else if (this.filterMode === '<20') this.maxDistanceKm = 20;
+    else if (this.filterMode === 'ville') this.maxDistanceKm = null;
+
+    this.applyFilters();
+  }
+
+  inputWidth: number = 150;
+
+updateInputWidth(): void {
+  const base = 40;
+  const text = this.cityFilter || '';
+  const canvas = document.createElement('canvas');
+  const context = canvas.getContext('2d');
+
+  if (context) {
+    context.font = '14px system-ui'; // ajuste selon ta police réelle
+    const textWidth = context.measureText(text).width;
+    this.inputWidth = Math.min(350, Math.max(60, textWidth + base));
+  }
+
+  // Appel de l'auto-complétion
+  this.searchCities(this.cityFilter);
+  console.log(this.inputWidth)
+}
+
+adjustWidth(): void {
+  if (this.measureSpan?.nativeElement && this.cityInput?.nativeElement) {
+    const span = this.measureSpan.nativeElement as HTMLElement;
+    const input = this.cityInput.nativeElement as HTMLElement;
+    const style = window.getComputedStyle(input);
+
+    span.style.font = style.font;
+    span.style.fontSize = style.fontSize;
+    span.style.fontWeight = style.fontWeight;
+    span.style.fontFamily = style.fontFamily;
+    span.textContent = this.cityFilter || 'Tape une ville';
+
+    const spanWidth = span.offsetWidth;
+    this.inputWidth = Math.min(400, Math.max(50, spanWidth + 5)); // ou 16, à tester
+  }
+}
 
 }

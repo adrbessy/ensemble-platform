@@ -27,7 +27,8 @@ const routes: Routes = [
     path: 'mon-profil',
     component: MonProfilComponent
   },
-  { path: 'activite/:id', component: EventDetailComponent },
+  { path: 'activite/:id', component: EventDetailComponent,
+  canActivate: [AuthGuard] },
   // Redirection pour toute autre URL
   { path: '**', redirectTo: '', pathMatch: 'full' }
 ];

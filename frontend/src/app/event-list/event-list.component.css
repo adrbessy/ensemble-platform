@@ -174,3 +174,28 @@ h4 {
   color: white;
 }
 
+.city-input {
+  transition: width 0.2s ease;
+}
+
+.city-measure {
+  position: absolute;
+  visibility: hidden;
+  white-space: pre;
+  font-size: 0.875rem; /* même que form-control-sm */
+  font-family: inherit;
+  padding: 0;
+}
+
+.invisible-span {
+  position: absolute;
+  visibility: hidden;
+  white-space: pre;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem; /* même que .form-control-sm */
+  font-weight: 400;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+

@@ -1,13 +1,19 @@
-<div *ngIf="event" class="container py-4">
-  <h2 class="fw-bold">{{ event.tag }}</h2>
-  <p class="text-muted">
-    📅 {{ event.date | date:'fullDate' }} • 🕒 {{ event.startTime }} – {{ event.endTime || '...' }}
-  </p>
+<div *ngIf="event" class="container py-4" style="max-width: 720px; margin: auto;">
+
+  <div class="d-flex justify-content-between align-items-center flex-wrap mb-2">
+    <h2 class="fw-bold mb-0">{{ event.tag }}</h2>
+    <div class="text-muted small">
+      📅 {{ event.date | date:'fullDate' }} • 🕒 {{ event.startTime }} – {{ event.endTime || '...' }}
+    </div>
+  </div>
+
   <p>
     📍 {{ event.placeName }} ({{ event.location }})<br />
   </p>
 
   <div *ngIf="event?.latitude && event?.longitude" id="eventMap" style="height: 300px;"></div>
+
+  <hr />
 
   <p>{{ event.description }}</p>
 
@@ -32,6 +38,14 @@
 
   <hr />
 
+  <div *ngIf="event.imageUrl" class="text-center mb-3">
+    <img [src]="getImageUrl(event.imageUrl)"
+        alt="Image de l’événement"
+        class="img-fluid rounded"
+        style="max-height: 300px;">
+  </div>
+
+  <hr />
 
   <button class="btn btn-primary" *ngIf="!hasUserParticipated(event)" (click)="participate(event)">Participer</button>
   <button class="btn btn-danger" *ngIf="hasUserParticipated(event)" (click)="withdraw(event)">Se désinscrire</button>
