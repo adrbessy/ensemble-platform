@@ -19,7 +19,8 @@
     </label>
 
     <label class="d-flex align-items-center gap-1">
-      <input type="checkbox" [(ngModel)]="parityFilter" (ngModelChange)="onlyParity = $event; applyFilters()" class="form-check-input" />
+      <input type="checkbox" [(ngModel)]="onlyParity"
+       (ngModelChange)="applyFilters()" class="form-check-input" />
       <span class="d-flex align-items-center">
         <span class="text-pink">♀️</span>
         <span class="mx-1">=</span>
@@ -28,9 +29,12 @@
     </label>
 
     <app-location-selector
-      (locationChange)="onLocationChange($event)"
-      (clearLocation)="onLocationCleared()"
-    ></app-location-selector>
+  [initialRadius]="maxDistanceKm"
+  [initialCity]="cityFilter"
+  (locationChange)="onLocationChange($event)"
+  (clearLocation)="onLocationCleared()"
+></app-location-selector>
+
 
 
 <!--

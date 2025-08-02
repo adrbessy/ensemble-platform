@@ -1,19 +1,30 @@
-import { Component, EventEmitter, Output } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 
 @Component({
   selector: 'app-location-selector',
   templateUrl: './location-selector.component.html',
   styleUrls: ['./location-selector.component.css']
 })
-export class LocationSelectorComponent {
+export class LocationSelectorComponent implements OnInit  {
   search: string = '';
   suggestions: string[] = [];
   selectedCity: string = '';
   radius: number = 10;
   showPopup = false;
 
+  @Input() initialRadius: number = 10;
+  @Input() initialCity: string = '';
+
+
   @Output() locationChange = new EventEmitter<{ city: string; radius: number; latitude?: number; longitude?: number }>();
   @Output() clearLocation = new EventEmitter<void>();
+
+  ngOnInit(): void {
+  this.radius = this.initialRadius;
+  this.selectedCity = this.initialCity;
+  this.search = this.initialCity;
+}
+
 
   togglePopup() {
     this.showPopup = !this.showPopup;

@@ -197,25 +197,37 @@ onMyActivitiesToggle(): void {
     this.currentUserId = this.authService.getCurrentUserId();
   }
 
-  ngOnInit(): void {
-    this.currentUserId = this.authService.getCurrentUserId();
+ngOnInit(): void {
+  this.currentUserId = this.authService.getCurrentUserId();
 
-    if (this.authService.isLoggedIn()) {
-      const user = this.authService.getCurrentUser();
-      this.userContacts = user.contacts || [];
-
-      this.groupService.getMyGroups().subscribe({
-        next: (groups) => this.myGroupIds = groups.map(g => g.id),
-        error: (err) => console.error('Erreur chargement groupes :', err)
-      });
-    }
-
-    // 🔁 Charge les événements même si l’utilisateur n’est pas connecté
-    this.refreshEventsWithLocation();
-
-    // 🔄 Toujours écouter le rafraîchissement
-    this.eventService.refreshEvents$.subscribe(() => this.loadEvents());
+  // ✅ Charger les filtres sauvegardés AVANT de charger les événements
+  const temp = localStorage.getItem('chill_filters_temp');
+  if (temp) {
+    const prefs = JSON.parse(temp);
+    this.onlyWithFriends = prefs.onlyWithFriends ?? false;
+    this.onlyParity = prefs.onlyParity ?? false;
+    this.cityFilter = prefs.cityFilter ?? '';
+    this.maxDistanceKm = prefs.maxDistanceKm ?? 10;
+    this.filterMode = prefs.filterMode ?? '<10';
+    this.selectedCity = prefs.selectedCity ?? '';
   }
+
+  if (this.authService.isLoggedIn()) {
+    const user = this.authService.getCurrentUser();
+    this.userContacts = user.contacts || [];
+
+    this.groupService.getMyGroups().subscribe({
+      next: (groups) => this.myGroupIds = groups.map(g => g.id),
+      error: (err) => console.error('Erreur chargement groupes :', err)
+    });
+  }
+
+  // ✅ Charger les événements ensuite
+  this.refreshEventsWithLocation();
+
+  this.eventService.refreshEvents$.subscribe(() => this.loadEvents());
+}
+
 
 
 getCityFromCoordinates(lat: number, lon: number): void {
@@ -547,8 +559,22 @@ console.log('🔘 Filtre "amis présents" actif :', this.onlyWithFriends);
   });
 
   this.groupEventsByDate();
+
+  // ✅ Sauvegarde les filtres après application
+  this.saveTemporaryFilters();
 }
 
+saveTemporaryFilters(): void {
+  const prefs = {
+    onlyWithFriends: this.onlyWithFriends,
+    onlyParity: this.onlyParity,
+    cityFilter: this.cityFilter,
+    maxDistanceKm: this.maxDistanceKm,
+    filterMode: this.filterMode,
+    selectedCity: this.selectedCity
+  };
+  localStorage.setItem('chill_filters_temp', JSON.stringify(prefs));
+}
 
 
 

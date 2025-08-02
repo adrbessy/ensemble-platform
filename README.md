@@ -159,3 +159,6 @@ Cadre de confiance
     Respect de l’intimité
 
         Pas un site de rencontres : priorité à la connexion via des activités vécues
+
+Peut-être cocher une case lors de la création d'activité : spécial famille avec enfants ?
+Ou/et parent solo avec enfant ?
