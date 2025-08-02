@@ -30,6 +30,7 @@ import { AutoResizeDirective } from './directives/auto-resize.directive';
 import { EventDetailComponent } from './event-detail/event-detail.component';
 import { MonProfilComponent } from './mon-profil/mon-profil.component';
 import { ChatComponent } from './chat/chat.component';
+import { LocationSelectorComponent } from './location-selector/location-selector.component';
 
 
 registerLocaleData(localeFr);
@@ -39,7 +40,8 @@ registerLocaleData(localeFr);
     AutoResizeDirective,
     EventDetailComponent,
     MonProfilComponent,
-    ChatComponent
+    ChatComponent,
+    LocationSelectorComponent
   ],
 
   imports: [RouterModule, BrowserAnimationsModule, // OBLIGATOIRE pour ngx-toastr

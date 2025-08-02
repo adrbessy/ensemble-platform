@@ -652,38 +652,66 @@ groupEventsByDate() {
 
   inputWidth: number = 150;
 
-updateInputWidth(): void {
-  const base = 40;
-  const text = this.cityFilter || '';
-  const canvas = document.createElement('canvas');
-  const context = canvas.getContext('2d');
+  updateInputWidth(): void {
+    const base = 40;
+    const text = this.cityFilter || '';
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
 
-  if (context) {
-    context.font = '14px system-ui'; // ajuste selon ta police réelle
-    const textWidth = context.measureText(text).width;
-    this.inputWidth = Math.min(350, Math.max(60, textWidth + base));
+    if (context) {
+      context.font = '14px system-ui'; // ajuste selon ta police réelle
+      const textWidth = context.measureText(text).width;
+      this.inputWidth = Math.min(350, Math.max(60, textWidth + base));
+    }
+
+    // Appel de l'auto-complétion
+    this.searchCities(this.cityFilter);
+    console.log(this.inputWidth)
   }
 
-  // Appel de l'auto-complétion
-  this.searchCities(this.cityFilter);
-  console.log(this.inputWidth)
-}
+  adjustWidth(): void {
+    if (this.measureSpan?.nativeElement && this.cityInput?.nativeElement) {
+      const span = this.measureSpan.nativeElement as HTMLElement;
+      const input = this.cityInput.nativeElement as HTMLElement;
+      const style = window.getComputedStyle(input);
 
-adjustWidth(): void {
-  if (this.measureSpan?.nativeElement && this.cityInput?.nativeElement) {
-    const span = this.measureSpan.nativeElement as HTMLElement;
-    const input = this.cityInput.nativeElement as HTMLElement;
-    const style = window.getComputedStyle(input);
+      span.style.font = style.font;
+      span.style.fontSize = style.fontSize;
+      span.style.fontWeight = style.fontWeight;
+      span.style.fontFamily = style.fontFamily;
+      span.textContent = this.cityFilter || 'Tape une ville';
 
-    span.style.font = style.font;
-    span.style.fontSize = style.fontSize;
-    span.style.fontWeight = style.fontWeight;
-    span.style.fontFamily = style.fontFamily;
-    span.textContent = this.cityFilter || 'Tape une ville';
-
-    const spanWidth = span.offsetWidth;
-    this.inputWidth = Math.min(400, Math.max(50, spanWidth + 5)); // ou 16, à tester
+      const spanWidth = span.offsetWidth;
+      this.inputWidth = Math.min(400, Math.max(50, spanWidth + 5)); // ou 16, à tester
+    }
   }
-}
+
+  onLocationChange(event: { city: string, radius: number, latitude?: number, longitude?: number }) {
+    this.cityFilter = event.city;
+    this.maxDistanceKm = event.radius;
+
+    if (event.latitude && event.longitude) {
+      this.userLatitude = event.latitude;
+      this.userLongitude = event.longitude;
+
+      // 🔁 Convertit le rayon en une valeur de filtre valide
+      if (event.radius <= 5) this.filterMode = '<5';
+      else if (event.radius <= 10) this.filterMode = '<10';
+      else this.filterMode = '<20';
+    } else {
+      this.filterMode = 'ville';
+    }
+
+    this.applyFilters();
+  }
+
+
+
+  onLocationCleared() {
+    this.cityFilter = '';
+    this.maxDistanceKm = 10;
+    this.applyFilters();
+  }
+
 
 }

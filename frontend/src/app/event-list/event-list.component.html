@@ -17,27 +17,26 @@
       <input type="checkbox" [(ngModel)]="onlyWithFriends" (change)="applyFilters()" class="form-check-input me-1" />
       Amis présents
     </label>
-    
-    <!--<label class="form-check-label d-flex align-items-center" *ngIf="isLoggedIn()">
-      <input type="checkbox" [(ngModel)]="onlyPrivate" class="form-check-input me-1" />
-      Privé
-    </label>-->
 
-      <label class="d-flex align-items-center gap-1">
-        <input type="checkbox" [(ngModel)]="parityFilter" (ngModelChange)="onlyParity = $event; applyFilters()" class="form-check-input" />
-        <span class="d-flex align-items-center">
-          <span class="text-pink">♀️</span>
-          <span class="mx-1">=</span>
-          <span class="text-blue">♂️</span>
-        </span>
-      </label>
+    <label class="d-flex align-items-center gap-1">
+      <input type="checkbox" [(ngModel)]="parityFilter" (ngModelChange)="onlyParity = $event; applyFilters()" class="form-check-input" />
+      <span class="d-flex align-items-center">
+        <span class="text-pink">♀️</span>
+        <span class="mx-1">=</span>
+        <span class="text-blue">♂️</span>
+      </span>
+    </label>
+
+    <app-location-selector
+      (locationChange)="onLocationChange($event)"
+      (clearLocation)="onLocationCleared()"
+    ></app-location-selector>
 
 
-<!-- Filtres lieux combinés -->
+<!--
 <div class="d-flex align-items-center gap-2 position-relative flex-nowrap">
 
 
-  <!-- Liste déroulante principale -->
   <select class="form-select form-select-sm"
           [(ngModel)]="filterMode"
           (ngModelChange)="onLieuFiltreChange()"
@@ -48,26 +47,24 @@
     <option value="ville">Autre ville...</option>
   </select>
 
-  <!-- Champ pour taper la ville -->
-<!-- 🏷 Champ de ville -->
-<div class="position-relative d-flex align-items-center">
-  <input #cityInput *ngIf="filterMode === 'ville'"
-       type="text"
-       class="form-control form-control-sm city-input"
-       [(ngModel)]="cityFilter"
-       (input)="adjustWidth()"
-       (ngModelChange)="onCityFilterChange()"
-       placeholder="Tape une ville"
-       [style.width.px]="inputWidth"
-       autocomplete="off" />
+  <div class="position-relative d-flex align-items-center">
+    <input #cityInput *ngIf="filterMode === 'ville'"
+        type="text"
+        class="form-control form-control-sm city-input"
+        [(ngModel)]="cityFilter"
+        (input)="adjustWidth()"
+        (ngModelChange)="onCityFilterChange()"
+        placeholder="Tape une ville"
+        [style.width.px]="inputWidth"
+        autocomplete="off" />
 
 
-  <!-- Span masqué pour mesurer -->
-  <span #measureSpan class="invisible-span">{{ cityFilter || 'Tape une ville' }}</span>
-</div>
+
+    <span #measureSpan class="invisible-span">{{ cityFilter || 'Tape une ville' }}</span>
+  </div>
 
 
-  <!-- Suggestions -->
+
   <div *ngIf="citySuggestions.length > 0 && filterMode === 'ville'"
        class="position-absolute bg-white border rounded shadow-sm mt-1"
        style="z-index: 1000; top: 100%; left: 150px; width: 220px;">
@@ -79,6 +76,7 @@
     </div>
   </div>
 </div>
+-->
 
 
     <!-- ➕ Bouton Ajouter un filtre -->

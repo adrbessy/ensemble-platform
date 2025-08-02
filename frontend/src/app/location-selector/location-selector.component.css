@@ -1,0 +1,42 @@
+.location-display {
+  border: 1px solid #ccc;
+  border-radius: 20px;
+  padding: 6px 12px;
+  cursor: pointer;
+  display: inline-block;
+  background: #fff;
+    position: relative; /* ✅ pour ancrer la popup */
+  z-index: 1;
+}
+
+.location-popup {
+  position: absolute;
+  top: 100%; /* juste en dessous du bouton */
+  z-index: 999;
+  border: 1px solid #ddd;
+  background: white;
+  padding: 10px;
+  width: 250px;
+  margin-top: 4px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+
+.location-popup ul {
+  list-style: none;
+  padding: 0;
+  max-height: 120px;
+  overflow-y: auto;
+}
+
+.location-popup li {
+  cursor: pointer;
+  padding: 4px;
+}
+.location-popup li:hover {
+  background-color: #eee;
+}
+
+.chevron {
+  margin-left: 6px;
+}

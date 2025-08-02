@@ -31,7 +31,12 @@ Page de connexion
     possibilité pour l'utilisateur de regénérer un mot de passe en lui envoyant un mail si il l'a oublié.
 
 Page affichant la liste des activités :
-    -> Affichage des filtres actifs (par défaut "Tous les types d'activités", "tout âges", "< 10km", "parité") + bouton 3 petits points qui mène à la page des filtres. Si on sélectionne plusieurs filtres, ça doit être des réunions et pas des intersections.
+    -> Affichage des filtres actifs collé sous la navbar, tout le temps visible :
+        -> Bouton "Mes activités" (uniquement présent quand connecté) : Affiche toutes les activités auxquel l'user participe peu importe les autres filtres activés, peu importe la distance.
+        -> Filtre localisation : Par défaut <10km, lorsque l'on clique sur le champ, on peut soit cliquer sur un input qui nous dit "Chercher une ville" et où on peut écrire une ville (avec complétion, propositions automatiques de villes), à ce moment là la ville est ajouté dans une étiquette, et l'input nous indique "Ajouter une autre ville". Ou alors on peut spécifier un rayon autour de nous avec des pas de 5km, 10km, 20km, 30km, avec une carte qui fait un cercle autour de notre position avec le rayon spécifié. Donc soit la ville soit la distance par rapport à notre position. Puis un bouton Valider.
+        -> Filtre "Avec Amis" (uniquement présent quand connecté). Ce filtre affiche les activités dans lequel au moins amis de l'user est présent en tenant compte du filtre Localisation.
+        -> Filtre Parité. Ce filtre affiche les activités pour lesquelles la parité est présente. Si les filtres amis et parité sont activés, alors on a à la fois les activités dans lesquelles appraissent les amis et les activités où il y a parité qui sont affichés. ça ne doit pas être une intersection.
+        -> Bouton (3 petits points ou + Filtres) qui mène à la page des filtres. Si on sélectionne plusieurs filtres, ça doit être des réunions et pas des intersections.
     -> Affichage des événements (avec des places restantes) par date (avec possibilité de cliquer sur la date pour masquer les événements prévus à cette date, si on reclique sur la date, ça les refait apparaître).
     -> Chaque événement a :
         -> Une heure de début (heure de fin facultative)
@@ -44,8 +49,6 @@ Page affichant la liste des activités :
         -> bouton "participer" (absent si on n'est pas connecté)
         -> Lors du clic sur l'activité, on va dans la page de l'activité (on ne peut pas si on n'est pas connecté)
     Quand non connecté, message "Pas encore inscrit ? Créez un compte pour participer aux activités." et gros bouton "S'inscrire".
-        -> Bouton switch "Mes événements" (quand connecté)
-        -> Bouton switch "Mes contacts y participent" (quand connecté)
 
 Page de filtres : 
     -> Tags : Mettre les 10 les plus utilisés puis mettre une barre de recherche pour en ajouter un autre. Sélection et désélection possible. Bouton "Tous les types d'activités".
@@ -129,6 +132,10 @@ Envies spontanées
 Il y aura aussi une application mobile.
 
 Liste des tags : atelier/échange de langues, jeux (inclut jeux de société, jeux extérieur, quizz), jeux de société, jeux extérieur, quizz, café/bar/détente/discussions, randonnée/balade, plage, musée, restaurant (inclut brunch), brunch, musique(inclut concert), concert, sport (inclut badminton, squash, football, tennis, pickle ball, volley, danse, ...), danse (inclut bachata, rock, salsa, ...), apéro, pique-nique, cinéma, spectacle (inclut théâtre, stand-up), théâtre, stand-up.
+
+Un système de badge ou de "fiabilité" (ex : "a participé à X activités", "a reçu 3+ retours positifs") pourrait renforcer la confiance entre utilisateurs.
+
+Possibilité de signaler un utilisateur ou une activité.
 
 -----
 Peut-être plus tard :

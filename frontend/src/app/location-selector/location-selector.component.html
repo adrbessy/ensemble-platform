@@ -1,0 +1,29 @@
+<div class="location-display" (click)="togglePopup()">
+  {{ getFilterLabel() }}
+  <span class="chevron">▼</span>
+</div>
+
+
+<div *ngIf="showPopup" class="location-popup">
+  <input 
+    type="text" 
+    [(ngModel)]="search" 
+    placeholder="Tape une ville" 
+    (input)="onSearch()" 
+  />
+
+  <ul *ngIf="suggestions.length > 0">
+    <li *ngFor="let city of suggestions" (click)="selectCity(city)">
+      {{ city }}
+    </li>
+  </ul>
+
+  <hr class="my-2" />
+
+  <div class="d-flex flex-column gap-1">
+    <button class="btn btn-light btn-sm text-start" (click)="selectRadius(5)">📍 Autour de moi – < 5 km</button>
+    <button class="btn btn-light btn-sm text-start" (click)="selectRadius(10)">📍 Autour de moi – < 10 km</button>
+    <button class="btn btn-light btn-sm text-start" (click)="selectRadius(20)">📍 Autour de moi – < 20 km</button>
+  </div>
+</div>
+
