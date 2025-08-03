@@ -94,9 +94,19 @@ public class AuthService {
         }
 
         userRepository.save(user);
+        // Génération du code ami
+        String friendCode = generateFriendCode(user.getId());
+        user.setFriendCode(friendCode);
+        userRepository.save(user); // ← on met à jour l'utilisateur
 
         return ResponseEntity.ok(new ApiResponse("Utilisateur inscrit avec succès !"));
     }
+
+    private String generateFriendCode(Long userId) {
+        String random = UUID.randomUUID().toString().substring(0, 4).toUpperCase();
+        return userId + "-" + random;
+    }
+
 
     public ResponseEntity<?> register(RegisterRequest request) {
         // Vérifie si l'utilisateur existe déjà
@@ -112,6 +122,10 @@ public class AuthService {
         newUser.setPassword(passwordEncoder.encode(request.getPassword()));
         newUser.setUsername(request.getEmail());
         System.out.println("Avant save: " + newUser.getEmail());
+        userRepository.save(newUser);
+        // Génération du code ami
+        String friendCode = generateFriendCode(newUser.getId());
+        newUser.setFriendCode(friendCode);
         userRepository.save(newUser);
         System.out.println("Après save");
         return ResponseEntity.ok(new MessageResponse("Inscription réussie"));

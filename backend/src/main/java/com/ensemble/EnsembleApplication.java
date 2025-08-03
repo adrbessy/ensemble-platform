@@ -14,6 +14,7 @@ public class EnsembleApplication {
         SpringApplication.run(EnsembleApplication.class, args);
     }
 
+    /*
     @Bean
     CommandLineRunner init(UserRepository userRepo) {
         return args -> {
@@ -21,5 +22,5 @@ public class EnsembleApplication {
                 userRepo.save(new User("adrien", "adrien@mail.com"));
             }
         };
-    }
+    }*/
 }

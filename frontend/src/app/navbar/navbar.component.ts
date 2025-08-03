@@ -2,6 +2,8 @@ import { Component, EventEmitter, Output } from '@angular/core';
 import { AuthService } from '../auth.service';
 import jwt_decode from 'jwt-decode';
 import { environment } from 'src/environments/environment';
+import { UserService } from '../services/user.service';
+import { User } from '../models/user.model';
 
 @Component({
   selector: 'app-navbar',
@@ -9,34 +11,35 @@ import { environment } from 'src/environments/environment';
   styleUrls: ['./navbar.component.css']
 })
 export class NavbarComponent {
-  constructor(private authService: AuthService) {}
+  constructor(private authService: AuthService, private userService: UserService) {}
 
   @Output() toggleFiltersPanel = new EventEmitter<void>();
+  timestamp = Date.now();
 
   isUserLoggedIn: boolean = false;
-  user: any = null;
+  user: User | null = null;
   environment = environment;
 
   ngOnInit(): void {
-    this.authService.getLoggedIn().subscribe((loggedIn) => {
-      this.isUserLoggedIn = loggedIn;
-      if (loggedIn) {
-        const token = this.authService.getToken();
-        if (token) {
-          try {
-            const decoded: any = jwt_decode(token);
-            this.user = decoded;
-            console.log('Utilisateur décodé :', this.user);
-          } catch (error) {
-            console.error('Erreur décodage token :', error);
-            this.user = null;
-          }
-        }
+    this.userService.user$.subscribe((user) => {
+      this.user = user;
+      if (user) {
+        this.isUserLoggedIn = true;
+        this.timestamp = Date.now(); // 🔁 force le rafraîchissement de l'avatar
       } else {
-        this.user = null; // 👈 nettoie l'ancien utilisateur
+        this.isUserLoggedIn = false;
       }
     });
+
+    // ⚠️ Initialiser le profil s’il est connecté
+    if (this.authService.isLoggedIn()) {
+      this.userService.getMyProfile().subscribe({
+        next: (user) => this.userService.setUser(user),
+        error: () => this.userService.setUser(null)
+      });
+    }
   }
+
 
 
   isLoggedIn(): boolean {

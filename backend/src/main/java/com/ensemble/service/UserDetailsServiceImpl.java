@@ -7,6 +7,8 @@ import org.springframework.security.core.userdetails.*;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Optional;
+import java.util.UUID;
 
 @Service
 public class UserDetailsServiceImpl implements UserDetailsService {
@@ -28,4 +30,20 @@ public class UserDetailsServiceImpl implements UserDetailsService {
                 new ArrayList<>() // liste des rôles / authorities si tu veux en ajouter plus tard
         );
     }
+
+    public String generateFriendCode(User user) {
+        String random = UUID.randomUUID().toString().substring(0, 4).toUpperCase();
+        return user.getId() + "-" + random;
+    }
+
+
+    public Optional<User> findByEmail(String email) {
+        return userRepository.findByEmail(email);
+    }
+
+    public User save(User user) {
+        return userRepository.save(user);
+    }
+
+
 }

@@ -1,23 +1,25 @@
-
-<!-- 🔍 Barre des filtres actifs -->
 <div class="navbar-secondaire bg-white border-bottom py-2 px-4 shadow-sm small d-flex justify-content-between align-items-center sticky-top">
 
-  <!-- 🔷 Mes activités à gauche -->
-  <label class="btn btn-outline-primary my-activities-toggle mb-0"
-         [class.active]="onlyMyEvents"
-         *ngIf="isLoggedIn()">
-    <input type="checkbox" [(ngModel)]="onlyMyEvents" (change)="onMyActivitiesToggle()" hidden />
-    Mes activités ⭐
-  </label>
+  <!-- 🔷 Colonne gauche : bouton "Mes activités" -->
+  <div>
+    <label class="btn btn-outline-primary my-activities-toggle mb-0"
+           [class.active]="onlyMyEvents"
+           *ngIf="isLoggedIn()">
+      <input type="checkbox" [(ngModel)]="onlyMyEvents" (change)="onMyActivitiesToggle()" hidden />
+      Mes activités ⭐
+    </label>
+  </div>
 
-  <!-- 🛠️ Filtres classiques à droite -->
-  <div class="d-flex align-items-center gap-3" *ngIf="!onlyMyEvents">
+  <!-- 🔘 Colonne droite : filtres classiques, toujours visibles -->
+  <div class="d-flex align-items-center gap-3">
     
+    <!-- ✅ Visible seulement si connecté -->
     <label class="form-check-label d-flex align-items-center" *ngIf="isLoggedIn()">
       <input type="checkbox" [(ngModel)]="onlyWithFriends" (change)="applyFilters()" class="form-check-input me-1" />
       Amis présents
     </label>
 
+    <!-- ✅ Toujours visible -->
     <label class="d-flex align-items-center gap-1">
       <input type="checkbox" [(ngModel)]="onlyParity"
        (ngModelChange)="applyFilters()" class="form-check-input" />
@@ -29,68 +31,26 @@
     </label>
 
     <app-location-selector
-  [initialRadius]="maxDistanceKm"
-  [initialCity]="cityFilter"
-  (locationChange)="onLocationChange($event)"
-  (clearLocation)="onLocationCleared()"
-></app-location-selector>
+      [initialRadius]="maxDistanceKm"
+      [initialCity]="cityFilter"
+      (locationChange)="onLocationChange($event)"
+      (clearLocation)="onLocationCleared()"
+    ></app-location-selector>
 
-
-
-<!--
-<div class="d-flex align-items-center gap-2 position-relative flex-nowrap">
-
-
-  <select class="form-select form-select-sm"
-          [(ngModel)]="filterMode"
-          (ngModelChange)="onLieuFiltreChange()"
-          style="width: 120px;">
-    <option value="<5"> < 5 km </option>
-    <option value="<10"> < 10 km </option>
-    <option value="<20"> < 20 km </option>
-    <option value="ville">Autre ville...</option>
-  </select>
-
-  <div class="position-relative d-flex align-items-center">
-    <input #cityInput *ngIf="filterMode === 'ville'"
-        type="text"
-        class="form-control form-control-sm city-input"
-        [(ngModel)]="cityFilter"
-        (input)="adjustWidth()"
-        (ngModelChange)="onCityFilterChange()"
-        placeholder="Tape une ville"
-        [style.width.px]="inputWidth"
-        autocomplete="off" />
-
-
-
-    <span #measureSpan class="invisible-span">{{ cityFilter || 'Tape une ville' }}</span>
-  </div>
-
-
-
-  <div *ngIf="citySuggestions.length > 0 && filterMode === 'ville'"
-       class="position-absolute bg-white border rounded shadow-sm mt-1"
-       style="z-index: 1000; top: 100%; left: 150px; width: 220px;">
-    <div *ngFor="let suggestion of citySuggestions"
-         (click)="selectCity(suggestion)"
-         class="px-2 py-1 suggestion-item"
-         style="cursor: pointer;">
-      {{ suggestion }}
-    </div>
-  </div>
-</div>
--->
-
-
-    <!-- ➕ Bouton Ajouter un filtre -->
-    <button class="btn btn-outline-secondary d-flex align-items-center" (click)="toggleAdvancedFilters()" *ngIf="isLoggedIn()">
+    <!-- ✅ Toujours visible -->
+    <button class="btn btn-outline-secondary d-flex align-items-center" 
+            (click)="toggleAdvancedFilters()">
       ➕ filtres
     </button>
+    <div *ngIf="showAdvancedFilters" class="advanced-filters">
+      <!-- tes filtres (âge, sexe, tags, etc.) -->
+    </div>
+
 
   </div>
 
 </div>
+
 
 
 <!-- 📦 Container -->

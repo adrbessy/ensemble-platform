@@ -1,8 +1,11 @@
 package com.ensemble.model;
 
+import com.ensemble.dto.FriendRequest;
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.Data;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.time.LocalDate;
 import java.util.HashSet;
@@ -46,7 +49,23 @@ public class User {
             joinColumns = @JoinColumn(name = "user_id"),
             inverseJoinColumns = @JoinColumn(name = "contact_id")
     )
+    @JsonIgnore
     private Set<User> contacts = new HashSet<>();
+
+    @Column(unique = true)
+    private String friendCode;
+
+
+
+    @OneToMany(mappedBy = "sender", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    private List<FriendRequest> sentFriendRequests;
+
+    @OneToMany(mappedBy = "recipient", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    private List<FriendRequest> receivedFriendRequests;
+
+
 
     @Override
     public boolean equals(Object o) {
@@ -117,4 +136,12 @@ public class User {
     public void setPhotoUrl(String photoUrl) {
         this.photoUrl = photoUrl;
     }
+
+    public void addContact(User user) {
+        if (!this.contacts.contains(user)) {
+            this.contacts.add(user);
+            user.getContacts().add(this);
+        }
+    }
+
 }

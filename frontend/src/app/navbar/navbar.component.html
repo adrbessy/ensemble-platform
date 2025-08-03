@@ -28,13 +28,8 @@
             </a>
           </li>
           <li class="nav-item" routerLinkActive="active">
-            <a class="nav-link" routerLink="/contacts">
-              Contacts
-            </a>
-          </li>
-          <li class="nav-item" routerLinkActive="active">
-            <a class="nav-link" routerLink="/groupes">
-               Groupes
+            <a class="nav-link position-relative" routerLink="/messagerie" title="Messagerie">
+              <i class="bi bi-chat-dots"></i>
             </a>
           </li>
 
@@ -44,7 +39,7 @@
             <a [routerLink]="['/mon-profil']" class="nav-link p-0">
               <img
                 *ngIf="user?.photoFilename"
-                [src]="'http://localhost:8080/uploads/photos/' + user.photoFilename"
+                [src]="'http://localhost:8080/uploads/photos/' + user.photoFilename + '?t=' + timestamp"
                 alt="Profil"
                 class="rounded-circle"
                 width="36"

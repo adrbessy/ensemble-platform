@@ -19,6 +19,7 @@ const routes: Routes = [
   { path: 'create-group', component: GroupCreateComponent },
   { path: 'create-event', component: EventFormComponent },
   { path: 'chat/:id', component: ChatComponent },
+  { path: 'messagerie', component: ChatComponent },
   {
     path: 'forgot-password',
     component: ForgotPasswordComponent

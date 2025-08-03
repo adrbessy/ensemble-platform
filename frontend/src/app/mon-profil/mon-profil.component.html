@@ -3,24 +3,170 @@
   <i class="bi bi-arrow-left fs-4 text-dark"></i>
 </a>
 
-<div class="container text-center mt-4">
-  <img [src]="'http://localhost:8080/uploads/photos/' + user.photoFilename"
-       alt="avatar"
-       class="rounded-circle mb-3"
-       width="120" height="120"
-       onerror="this.src='assets/default-avatar.png'" />
+<div class="container text-center mt-4" *ngIf="user">
 
-  <h2>{{ user.firstName }} {{ user.lastName }}</h2>
+  <!-- Photo actuelle -->
+  <img [src]="previewUrl || 'http://localhost:8080/uploads/photos/' + user.photoFilename"
+      alt="avatar"
+      class="rounded-circle mb-3"
+      width="120" height="120"
+      style="object-fit: cover;"
+      onerror="this.src='assets/default-avatar.png'" />
 
-  <p><strong>Date de naissance :</strong> {{ user.birthDate | date:'dd/MM/yyyy' }}</p>
-  <p><strong>Genre :</strong> {{ user.gender }}</p>
-
-  <!-- Stats -->
-  <div class="d-flex justify-content-center gap-4 my-3">
-    <div><strong>{{ 0 }}</strong><br/>Événements participés</div>
-    <div><strong>{{ 0 }}</strong><br/>Événements organisés</div>
-    <div><strong>{{ 0 }}</strong><br/>Contacts</div>
+  <!-- Upload custom -->
+  <div class="custom-file-upload mb-2">
+    <label for="fileInput" class="btn btn-outline-secondary">
+      📁 Choisir une photo
+    </label>
+    <span class="ms-2 small text-muted">{{ selectedFile?.name || 'Aucun fichier sélectionné' }}</span>
+    <input id="fileInput" type="file" (change)="onFileSelected($event)" accept="image/*" hidden />
   </div>
+
+  <button *ngIf="selectedFile" class="btn btn-sm btn-primary" (click)="uploadPhoto()">Mettre à jour la photo</button>
+
+
+
+  <!-- Prénom -->
+  <p>
+    <strong>Prénom :</strong>
+    <ng-container *ngIf="!edit.firstName; else editFirstName">
+      {{ user.firstName }}
+      <button class="btn btn-sm btn-link" (click)="edit.firstName = true">✏️</button>
+    </ng-container>
+    <ng-template #editFirstName>
+      <input type="text" [(ngModel)]="user.firstName" />
+      <button class="btn btn-sm btn-success" (click)="save('firstName')">✅</button>
+      <button class="btn btn-sm btn-secondary" (click)="edit.firstName = false">❌</button>
+    </ng-template>
+  </p>
+
+  <!-- Nom -->
+  <p>
+    <strong>Nom :</strong>
+    <ng-container *ngIf="!edit.lastName; else editLastName">
+      {{ user.lastName }}
+      <button class="btn btn-sm btn-link" (click)="edit.lastName = true">✏️</button>
+    </ng-container>
+    <ng-template #editLastName>
+      <input type="text" [(ngModel)]="user.lastName" />
+      <button class="btn btn-sm btn-success" (click)="save('lastName')">✅</button>
+      <button class="btn btn-sm btn-secondary" (click)="edit.lastName = false">❌</button>
+    </ng-template>
+  </p>
+
+  <!-- Champs modifiables -->
+  <p>
+    <strong>Date de naissance :</strong>
+    <ng-container *ngIf="!edit.birthdate; else editBirthdate">
+      {{ user.birthdate | date:'dd/MM/yyyy' }}
+      <button class="btn btn-sm btn-link" (click)="edit.birthdate = true">✏️</button>
+    </ng-container>
+    <ng-template #editBirthdate>
+      <input type="date" [(ngModel)]="user.birthdate" />
+      <button class="btn btn-sm btn-success" (click)="save('birthdate')">✅</button>
+      <button class="btn btn-sm btn-secondary" (click)="edit.birthdate = false">❌</button>
+    </ng-template>
+  </p>
+
+  <p>
+    <strong>Genre :</strong>
+    <ng-container *ngIf="!edit.gender; else editGender">
+      {{ user.gender }}
+      <button class="btn btn-sm btn-link" (click)="edit.gender = true">✏️</button>
+    </ng-container>
+    <ng-template #editGender>
+      <select [(ngModel)]="user.gender">
+        <option value="HOMME">Homme</option>
+        <option value="FEMME">Femme</option>
+        <option value="AUTRE">Autre</option>
+      </select>
+      <button class="btn btn-sm btn-success" (click)="save('gender')">✅</button>
+      <button class="btn btn-sm btn-secondary" (click)="edit.gender = false">❌</button>
+    </ng-template>
+  </p>
+
+  <hr class="my-4" />
+
+  <!-- Code ami -->
+<div class="mb-4">
+  <p class="fw-bold mb-1">Mon code ami :</p>
+  <div class="d-inline-flex align-items-center gap-2 px-3 py-1 border rounded-pill bg-light">
+    <strong class="text-primary">{{ user.friendCode }}</strong>
+    <button class="btn btn-sm btn-outline-secondary py-0" (click)="copyToClipboard(user.friendCode)">
+      <i class="bi bi-clipboard"></i>
+    </button>
+  </div>
+</div>
+
+<!-- Ajout d'un ami -->
+<div class="mb-4">
+  <h5 class="mb-3">Ajouter un ami via un code</h5>
+  <div class="d-flex justify-content-center align-items-center gap-2 flex-wrap">
+    <input [(ngModel)]="friendCode"
+          class="form-control"
+          placeholder="Code ami (ex: 1234-ABCD)"
+          style="max-width: 250px;" />
+    <button class="btn btn-primary" (click)="ajouterAmi()">Ajouter</button>
+  </div>
+  <div *ngIf="friendAddedMessage" class="mt-2 text-success small">
+    {{ friendAddedMessage }}
+  </div>
+</div>
+
+<!-- 🔔 Demandes d’amis reçues -->
+<div class="mt-5" *ngIf="friendRequests.length > 0">
+  <h5>Demandes d’amis reçues</h5>
+  <ul class="list-group">
+    <li *ngFor="let request of pendingFriendRequests" class="list-group-item d-flex justify-content-between align-items-center">
+      <span>{{ request.sender.firstName }} {{ request.sender.lastName }}</span>
+      <div>
+        <button class="btn btn-sm btn-success me-2" (click)="accepterDemande(request.id)">Accepter</button>
+        <button class="btn btn-sm btn-outline-danger" (click)="refuserDemande(request.id)">Refuser</button>
+      </div>
+    </li>
+  </ul>
+</div>
+
+<div *ngIf="friendRequests.length === 0" class="text-muted mt-2">
+  Aucune demande d’ami reçue.
+</div>
+
+
+<!-- Liste d'amis -->
+<h5 class="mt-4">Mes amis</h5>
+<p *ngIf="!user.contacts?.length" class="text-muted">Aucun contact pour le moment.</p>
+<ul *ngIf="user.contacts?.length">
+  <li *ngFor="let contact of user.contacts" class="d-flex align-items-center gap-2 mb-2">
+    <img [src]="'http://localhost:8080/uploads/photos/' + contact.photoFilename"
+         width="40" height="40"
+         class="rounded-circle"
+         style="object-fit: cover;"
+         onerror="this.src='assets/default-avatar.png'" />
+    <span>{{ contact.firstName }} {{ contact.lastName }}</span>
+  </li>
+</ul>
+
+
+
+<!-- Stats -->
+<div class="d-flex justify-content-center gap-4 my-4">
+  <div class="text-center">
+    <div class="fw-bold fs-4">0</div>
+    <small>Événements<br/>participés</small>
+  </div>
+  <div class="text-center">
+    <div class="fw-bold fs-4">0</div>
+    <small>Événements<br/>organisés</small>
+  </div>
+  <div class="text-center">
+    <div class="fw-bold fs-4">0</div>
+    <small>Contacts</small>
+  </div>
+</div>
+
+
+  
+  <hr class="my-4" />
 
   <button class="btn btn-warning mb-2" (click)="changePassword()">Changer mon mot de passe</button><br/>
   <button class="btn btn-danger" (click)="logout()">Se déconnecter</button>

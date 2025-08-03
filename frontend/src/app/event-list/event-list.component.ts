@@ -228,6 +228,13 @@ ngOnInit(): void {
   this.eventService.refreshEvents$.subscribe(() => this.loadEvents());
 }
 
+showAdvancedFilters = false;
+
+toggleAdvancedFilters() {
+  this.showAdvancedFilters = !this.showAdvancedFilters;
+}
+
+
 
 
 getCityFromCoordinates(lat: number, lon: number): void {

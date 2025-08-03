@@ -5,6 +5,7 @@ import { NotificationService } from './services/notification.service';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { environment } from 'src/environments/environment';
+import { UserService } from './services/user.service';
 
 @Injectable({
   providedIn: 'root'
@@ -13,7 +14,8 @@ export class AuthService {
   private tokenKey = 'token';
   private currentUser: any = null;
 
-  constructor(private http: HttpClient, private notificationService: NotificationService, private router: Router) {}
+  constructor(private http: HttpClient, private notificationService: NotificationService, private router: Router,
+  private userService: UserService ) {}
 
   private loggedIn$ = new BehaviorSubject<boolean>(this.isLoggedIn());
 
@@ -33,10 +35,10 @@ export class AuthService {
     localStorage.removeItem(this.tokenKey);
     this.currentUser = null;
     this.loggedIn$.next(false);
+    this.userService.setUser(null); // 🧹 Réinitialise l’utilisateur global
     this.notificationService.info("Déconnexion réussie.");
     this.router.navigate(['/login']);
   }
-
 
   setLoggedIn(value: boolean): void {
     this.loggedIn$.next(value);
