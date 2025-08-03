@@ -213,8 +213,15 @@ ngOnInit(): void {
   }
 
   if (this.authService.isLoggedIn()) {
-    const user = this.authService.getCurrentUser();
-    this.userContacts = user.contacts || [];
+    this.http.get<any>(`${environment.apiUrl}/users/me`).subscribe({
+      next: (user) => {
+        this.userContacts = user.contacts || [];
+        console.log("✅ Contacts récupérés depuis /users/me :", this.userContacts);
+      },
+      error: (err) => {
+        console.error("❌ Erreur récupération utilisateur avec contacts :", err);
+      }
+    });
 
     this.groupService.getMyGroups().subscribe({
       next: (groups) => this.myGroupIds = groups.map(g => g.id),
@@ -524,9 +531,10 @@ console.log('🔘 Filtre "amis présents" actif :', this.onlyWithFriends);
     if (!matchesLocation) return false;
 
     // 🧑‍🤝‍🧑 Amis présents
-    const isWithFriend = event.participants?.some(p =>
-      this.userContacts.some(c => c.id === p.id)
-    );
+    const contactIds = this.userContacts.map(c => typeof c === 'number' ? c : c.id);
+    const isWithFriend = event.participants?.some(p => contactIds.includes(p.id));
+    console.log("👥 contactIds:", contactIds);
+    console.log("👤 participants:", event.participants.map(p => p.id));
 
     // 👥 Si le filtre "amis" est coché seul
     if (this.onlyWithFriends && !this.onlyParity) {
@@ -674,14 +682,22 @@ groupEventsByDate() {
   }
 
   onLieuFiltreChange(): void {
-    // Reset les valeurs au changement
-    if (this.filterMode === '<5') this.maxDistanceKm = 5;
-    else if (this.filterMode === '<10') this.maxDistanceKm = 10;
-    else if (this.filterMode === '<20') this.maxDistanceKm = 20;
-    else if (this.filterMode === 'ville') this.maxDistanceKm = null;
+    if (this.filterMode === '<5') {
+      this.maxDistanceKm = 5;
+      this.cityFilter = '';
+    } else if (this.filterMode === '<10') {
+      this.maxDistanceKm = 10;
+      this.cityFilter = '';
+    } else if (this.filterMode === '<20') {
+      this.maxDistanceKm = 20;
+      this.cityFilter = '';
+    } else if (this.filterMode === 'ville') {
+      this.maxDistanceKm = null;
+    }
 
     this.applyFilters();
   }
+
 
   inputWidth: number = 150;
 

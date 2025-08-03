@@ -6,6 +6,7 @@ import { BehaviorSubject, Observable } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { environment } from 'src/environments/environment';
 import { UserService } from './services/user.service';
+import { User } from './models/user.model';
 
 @Injectable({
   providedIn: 'root'
@@ -108,6 +109,18 @@ export class AuthService {
     }
     return this.currentUser;
   }
+
+  refreshCurrentUser(): void {
+    this.http.get<User>(`${environment.apiUrl}/users/me`).subscribe({
+      next: (user) => {
+        localStorage.setItem('currentUser', JSON.stringify(user));
+      },
+      error: (err) => {
+        console.error("Erreur lors du rafraîchissement de l'utilisateur :", err);
+      }
+    });
+  }
+
   
 
 }

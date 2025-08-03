@@ -98,6 +98,9 @@ export class LocationSelectorComponent implements OnInit  {
     console.log('✅ selectRadius appelé avec rayon :', radius);
     this.radius = radius;
 
+    this.selectedCity = '';
+    this.search = '';
+
     // ✅ Vérifie s’il y a une position en cache
     const cachedLat = localStorage.getItem('userLatitude');
     const cachedLng = localStorage.getItem('userLongitude');

@@ -130,13 +130,17 @@ export class MonProfilComponent {
       next: () => {
         this.loadProfile();       // Rafraîchit la liste d'amis
         this.loadFriendRequests(); // Enlève la demande de la liste
+        this.authService.refreshCurrentUser();
       }
     });
   }
 
   refuserDemande(id: number) {
     this.userService.deleteFriendRequest(id).subscribe({
-      next: () => this.loadFriendRequests()
+      next: () => {
+        this.loadFriendRequests();
+        this.authService.refreshCurrentUser();
+      }
     });
   }
 
