@@ -62,25 +62,65 @@
 
 .message {
   max-width: 70%;
-  background-color: #f1f0f0;
-  padding: 0.5rem 1rem;
+  padding: 0.6rem 1rem;
   border-radius: 1rem;
-  align-self: flex-start;
-}
-.message.mine {
-  background-color: #dcf8c6;
-  align-self: flex-end;
+  position: relative;
+  font-size: 0.95rem;
+  line-height: 1.4;
+  color: #212529;
+  display: inline-block;
+  word-wrap: break-word;
 }
 
-.input-area {
-  display: flex;
-  padding: 1rem;
-  border-top: 1px solid #ddd;
-  gap: 0.5rem;
+.message small {
+  display: block;
+  font-size: 0.75rem;
+  color: #999;
+  margin-top: 0.2rem;
+  text-align: right;
 }
+
+.message.mine {
+  background-color: #d1e7dd;
+  align-self: flex-end;
+  color: #0f5132;
+}
+
+.message:not(.mine) {
+  background-color: #f1f0f0;
+  align-self: flex-start;
+}
+
+
 .input-area input {
   flex: 1;
   padding: 0.5rem 1rem;
   border-radius: 999px;
   border: 1px solid #ccc;
 }
+
+.conversation.active {
+  background-color: #e0ecff;
+  border-left: 4px solid #0d6efd;
+}
+
+.input-area {
+  display: flex;
+  align-items: center;
+  padding: 1rem;
+  border-top: 1px solid #ddd;
+  gap: 0.5rem;
+  position: relative; /* nécessaire pour que le picker soit bien positionné */
+}
+
+.emoji-wrapper {
+  position: relative;
+}
+
+.emoji-picker-container {
+  position: absolute;
+  bottom: 50px;
+  right: 0;
+  z-index: 999;
+}
+

@@ -49,6 +49,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.DELETE, "/api/users/me").authenticated() // 👈 autoriser suppression compte
                         .requestMatchers(HttpMethod.GET, "/api/uploads/**").permitAll()
                         .requestMatchers("/api/users/**").authenticated()
+                        .requestMatchers("/api/messages/**").authenticated()
 
 
                         .anyRequest().authenticated()

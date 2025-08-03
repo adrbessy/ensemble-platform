@@ -199,3 +199,39 @@ h4 {
 }
 
 
+.btn-filter {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.8rem;
+  font-weight: 500;
+  border-radius: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+.btn-filter i,
+.btn-filter span {
+  font-size: 0.9rem;
+}
+
+/* Par défaut */
+.btn-filter-default {
+  background-color: white;
+  border: 1px solid #ccc;
+  color: #333;
+}
+
+/* Actif - Amis (même style que parité activée) */
+.btn-filter-active-friends {
+  background-color: #d1e7dd; /* vert clair Bootstrap */
+  color: #0f5132;            /* texte vert foncé */
+  border-color: #badbcc;
+}
+
+/* Actif - Parité */
+.btn-filter-active-parity {
+  background-color: #d1e7dd; /* vert clair Bootstrap */
+  color: #0f5132; /* texte vert foncé */
+  border-color: #badbcc;
+}
+

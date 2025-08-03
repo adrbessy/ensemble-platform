@@ -31,6 +31,9 @@ import { EventDetailComponent } from './event-detail/event-detail.component';
 import { MonProfilComponent } from './mon-profil/mon-profil.component';
 import { ChatComponent } from './chat/chat.component';
 import { LocationSelectorComponent } from './location-selector/location-selector.component';
+import { PickerModule } from '@ctrl/ngx-emoji-mart';
+
+
 
 
 registerLocaleData(localeFr);
@@ -50,7 +53,8 @@ registerLocaleData(localeFr);
       preventDuplicates: true,
       timeOut: 3000
     }),
-    BrowserModule, HttpClientModule, FormsModule, AppRoutingModule, NgbModule],
+    BrowserModule, HttpClientModule, FormsModule, AppRoutingModule, NgbModule, PickerModule
+  ],
 
   providers: [  {
     provide: HTTP_INTERCEPTORS,

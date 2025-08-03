@@ -66,6 +66,14 @@ export class UserService {
     );
     }
 
+    getContacts(): Observable<User[]> {
+        return this.http.get<User[]>('/api/users/contacts');
+    }
+
+    getCurrentUser() {
+        return this.http.get<User>(`/api/users/me`);
+    }
+
 
 
 }
