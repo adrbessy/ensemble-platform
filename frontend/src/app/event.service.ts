@@ -3,6 +3,22 @@ import { Observable, Subject } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { environment } from 'src/environments/environment';
 
+export interface Event {
+  id: number;
+  title: string;
+  date: string;
+  location: string;
+  latitude: number;
+  longitude: number;
+  startTime: string;
+  endTime: string;
+  maxParticipants: number;
+  participants: { id: number; gender?: string }[];
+  organizer: { id: number };
+  genderRequirement?: string;
+}
+
+
 @Injectable({
   providedIn: 'root'
 })
@@ -44,6 +60,20 @@ export class EventService {
   getEventById(id: number) {
     return this.http.get(`${environment.apiUrl}/events/${id}`);
   }
+
+searchEvents(minAge?: number, maxAge?: number): Observable<Event[]> {
+  const params: any = {};
+  if (minAge !== undefined) params.minAge = minAge;
+  if (maxAge !== undefined) params.maxAge = maxAge;
+
+  const token = localStorage.getItem('token');
+  const headers: any = token ? { Authorization: `Bearer ${token}` } : {};
+
+  return this.http.get<Event[]>('/api/events/search', { params, headers });
+}
+
+
+
 
 
 }

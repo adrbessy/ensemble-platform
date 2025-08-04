@@ -12,6 +12,7 @@
 .location-popup {
   position: absolute;
   top: 100%; /* juste en dessous du bouton */
+  right: 0; 
   z-index: 999;
   border: 1px solid #ddd;
   background: white;
@@ -39,4 +40,20 @@
 
 .chevron {
   margin-left: 6px;
+}
+
+.location-popup input[type="text"] {
+  width: 100%;
+  padding: 6px 12px;
+  border: 1px solid #ccc;
+  border-radius: 20px;
+  outline: none;
+  font-size: 0.875rem;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.location-popup input[type="text"]:focus {
+  border-color: #0d6efd;
+  box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.15);
 }

@@ -1,5 +1,5 @@
 
-import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import { Component, ElementRef, OnInit, ViewChild, HostListener } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { EventService } from '../event.service';
 import { AuthService } from '../auth.service';
@@ -18,7 +18,6 @@ import { GroupService } from '../services/group.service';
 export class EventListComponent implements OnInit {
   @ViewChild('measureSpan') measureSpan!: ElementRef;
   @ViewChild('cityInput') cityInput!: ElementRef;
-
 
   allEvents: any[] = [];
   events: any[] = [];
@@ -41,6 +40,9 @@ export class EventListComponent implements OnInit {
   isGeoLocating: boolean = false;
   citySuggestions: string[] = [];
   private previousFilters: any = {};
+  ageMin: number = 16;
+  ageMax: number = 99;
+  showAgeFilter = false;
 
 
   searchCities(term: string): void {
@@ -210,6 +212,8 @@ ngOnInit(): void {
     this.maxDistanceKm = prefs.maxDistanceKm ?? 10;
     this.filterMode = prefs.filterMode ?? '<10';
     this.selectedCity = prefs.selectedCity ?? '';
+    this.ageMin = prefs.ageMin ?? 16;    
+    this.ageMax = prefs.ageMax ?? 99; 
   }
 
   if (this.authService.isLoggedIn()) {
@@ -286,9 +290,10 @@ clearFilter(filter: string): void {
 
   async loadEvents(): Promise<void> {
     this.isLoading = true;
-
-    this.eventService.getEvents().subscribe({
+console.log("Âge min/max appliqués :", this.ageMin, this.ageMax);
+     this.eventService.searchEvents(this.ageMin, this.ageMax).subscribe({
       next: (events) => {
+        console.log("Événements reçus du backend :", events);
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
@@ -523,10 +528,20 @@ console.log('🔘 Filtre "amis présents" actif :', this.onlyWithFriends);
     const isMyEvent = event.participants?.some(p => p.id === this.currentUserId);
     if (eventDate < now && !isMyEvent) return false;
 
-    // 📍 Filtre localisation
-    const matchesLocation = (this.filterMode === 'ville')
-      ? this.extractCity(event.location).toLowerCase() === this.cityFilter.trim().toLowerCase()
-      : this.calculateDistanceKm(this.userLatitude!, this.userLongitude!, event.latitude, event.longitude) <= this.maxDistanceKm!;
+    const isDepartmentFormat = this.cityFilter.match(/^(.+) \((\d{2,3})\)$/);
+    let matchesLocation = false;
+
+    if (this.filterMode === 'ville') {
+      if (isDepartmentFormat) {
+        const deptCode = isDepartmentFormat[2];
+        // Vérifie si event.location contient le code du département
+        matchesLocation = event.location?.includes(`(${deptCode})`) || event.location?.includes(deptCode);
+      } else {
+        matchesLocation = this.extractCity(event.location).toLowerCase() === this.cleanCityName(this.cityFilter).toLowerCase();
+      }
+    } else {
+      matchesLocation = this.calculateDistanceKm(this.userLatitude!, this.userLongitude!, event.latitude, event.longitude) <= this.maxDistanceKm!;
+    }
 
     if (!matchesLocation) return false;
 
@@ -562,7 +577,7 @@ console.log('🔘 Filtre "amis présents" actif :', this.onlyWithFriends);
 
     // 🧠 Logique finale : Amis OU Parité
     if (this.onlyWithFriends && this.onlyParity) {
-      return isWithFriend || isParityOk;
+      return isWithFriend && isParityOk;
     } else if (this.onlyWithFriends) {
       return isWithFriend;
     } else if (this.onlyParity) {
@@ -586,7 +601,9 @@ saveTemporaryFilters(): void {
     cityFilter: this.cityFilter,
     maxDistanceKm: this.maxDistanceKm,
     filterMode: this.filterMode,
-    selectedCity: this.selectedCity
+    selectedCity: this.selectedCity,
+    ageMin: this.ageMin,   
+    ageMax: this.ageMax  
   };
   localStorage.setItem('chill_filters_temp', JSON.stringify(prefs));
 }
@@ -754,12 +771,25 @@ groupEventsByDate() {
     this.applyFilters();
   }
 
-
-
   onLocationCleared() {
     this.cityFilter = '';
     this.maxDistanceKm = 10;
     this.applyFilters();
+  }
+
+  toggleAgeFilter() {
+    this.showAgeFilter = !this.showAgeFilter;
+  }
+
+  applyAgeFilter() {
+    this.showAgeFilter = false;
+    this.refreshEventsWithLocation(); // ou une autre méthode de filtrage
+  }
+
+  private cleanCityName(fullCity: string): string {
+    // Ex : "Mérignac (33700)" => "Mérignac"
+    const match = fullCity.match(/^(.+?)\s*\(\d{5}\)$/);
+    return match ? match[1].trim() : fullCity.trim();
   }
 
 

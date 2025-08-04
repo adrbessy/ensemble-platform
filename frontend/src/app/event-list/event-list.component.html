@@ -30,6 +30,26 @@
       ♀️ = ♂️
     </button>
 
+    <div class="position-relative">
+      <button class="btn btn-filter"
+        [ngClass]="'btn-filter-active-friends'" (click)="toggleAgeFilter()" id="ageFilterBtn">
+        {{ ageMin }} → {{ ageMax }} ans
+      </button>
+
+      <div *ngIf="showAgeFilter" class="age-dropdown p-2 border rounded bg-white shadow position-absolute" style="z-index: 10;">
+        <div class="d-flex align-items-center gap-2">
+          <label class="mb-0">Min</label>
+          <input type="number" class="form-control form-control-sm" [(ngModel)]="ageMin" min="13" max="120" placeholder="Min"
+       style="width: 60px;">
+          <label class="mb-0">Max</label>
+          <input type="number" class="form-control form-control-sm" [(ngModel)]="ageMax" min="13" max="120" placeholder="Max"
+       style="width: 60px;">
+        </div>
+        <div class="text-end mt-2">
+          <button class="btn btn-sm btn-primary" (click)="applyAgeFilter()">OK</button>
+        </div>
+      </div>
+    </div>
 
     <app-location-selector
       [initialRadius]="maxDistanceKm"
@@ -37,15 +57,6 @@
       (locationChange)="onLocationChange($event)"
       (clearLocation)="onLocationCleared()"
     ></app-location-selector>
-
-    <!-- ✅ Toujours visible -->
-    <button class="btn btn-outline-secondary d-flex align-items-center" 
-            (click)="toggleAdvancedFilters()">
-      ➕ filtres
-    </button>
-    <div *ngIf="showAdvancedFilters" class="advanced-filters">
-      <!-- tes filtres (âge, sexe, tags, etc.) -->
-    </div>
 
 
   </div>

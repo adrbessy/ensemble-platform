@@ -1,11 +1,11 @@
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { Component, ElementRef, EventEmitter, Input, OnDestroy, OnInit, Output, Renderer2 } from '@angular/core';
 
 @Component({
   selector: 'app-location-selector',
   templateUrl: './location-selector.component.html',
   styleUrls: ['./location-selector.component.css']
 })
-export class LocationSelectorComponent implements OnInit  {
+export class LocationSelectorComponent implements OnInit, OnDestroy  {
   search: string = '';
   suggestions: string[] = [];
   selectedCity: string = '';
@@ -19,11 +19,28 @@ export class LocationSelectorComponent implements OnInit  {
   @Output() locationChange = new EventEmitter<{ city: string; radius: number; latitude?: number; longitude?: number }>();
   @Output() clearLocation = new EventEmitter<void>();
 
+  constructor(private eRef: ElementRef, private renderer: Renderer2) {}
+
+  private globalClickListener: () => void;
+
   ngOnInit(): void {
-  this.radius = this.initialRadius;
-  this.selectedCity = this.initialCity;
-  this.search = this.initialCity;
-}
+    this.radius = this.initialRadius;
+    this.selectedCity = this.initialCity;
+    this.search = this.initialCity;
+
+    // 👇 Ajoute un écouteur global
+    this.globalClickListener = this.renderer.listen('document', 'click', (event: MouseEvent) => {
+      if (this.showPopup && !this.eRef.nativeElement.contains(event.target)) {
+        this.showPopup = false;
+      }
+    });
+  }
+
+  ngOnDestroy(): void {
+    if (this.globalClickListener) {
+      this.globalClickListener(); // Retire l’écouteur
+    }
+  }
 
 
   togglePopup() {
@@ -36,20 +53,48 @@ export class LocationSelectorComponent implements OnInit  {
       return;
     }
 
-    fetch(`https://geo.api.gouv.fr/communes?nom=${encodeURIComponent(this.search)}&fields=nom&limit=5`)
-      .then(res => res.json())
-      .then(data => {
-        this.suggestions = data.map((c: any) => c.nom);
+    Promise.all([
+      // 🔎 Villes avec nom + code postal
+      fetch(`https://geo.api.gouv.fr/communes?nom=${encodeURIComponent(this.search)}&fields=nom,codesPostaux&limit=5`)
+        .then(res => res.json())
+        .then(data =>
+          data.map((c: any) => `${c.nom} (${c.codesPostaux?.[0] || ''})`)
+        ),
+
+      // 🔎 Départements sans le mot "Département"
+      fetch(`https://geo.api.gouv.fr/departements?nom=${encodeURIComponent(this.search)}`)
+        .then(res => res.json())
+        .then(data =>
+          data.map((d: any) => `${d.nom} (${d.code})`)
+        )
+    ])
+      .then(([cityResults, deptResults]) => {
+        this.suggestions = [...cityResults, ...deptResults];
+      })
+      .catch(error => {
+        console.error('Erreur de recherche :', error);
+        this.suggestions = [];
       });
   }
 
-  selectCity(city: string) {
-    this.selectedCity = city;
-    this.search = city;
-    this.suggestions = [];
-    this.locationChange.emit({ city, radius: this.radius });
-    this.showPopup = false;
-  }
+
+selectCity(city: string) {
+  this.selectedCity = city;
+  this.search = city;
+  this.suggestions = [];
+
+  const isDepartment = /^\D+ \(\d{2,3}\)$/.test(city);
+
+  this.locationChange.emit({
+    city: city,
+    radius: this.radius,
+    latitude: undefined,
+    longitude: undefined
+  });
+
+  this.showPopup = false;
+}
+
 
 
   validate() {

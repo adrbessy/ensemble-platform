@@ -9,26 +9,22 @@ import com.ensemble.repository.EventRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
 public class EventService {
-
     private final EventRepository eventRepository;
-
     public EventService(EventRepository repository) {
         this.eventRepository = repository;
     }
-
     public List<Event> findAll() {
         return eventRepository.findAll();
     }
-
     public Event save(Event event) {
         return eventRepository.save(event);
     }
-
     public void delete(Long id) {
         eventRepository.deleteById(id);
     }
@@ -122,6 +118,24 @@ public class EventService {
         System.out.println("Organisateur : " + event.getOrganizer().getEmail());
         throw new RuntimeException("Non autorisé à voir cet événement");
     }
+
+    public List<Event> searchEvents(Integer minAge, Integer maxAge /* autres filtres */) {
+        LocalDate today = LocalDate.now();
+
+        LocalDate minBirthdate = null;
+        LocalDate maxBirthdate = null;
+
+        if (minAge != null) {
+            maxBirthdate = today.minusYears(minAge).plusDays(1); // inclus jusqu'à la veille de l'anniversaire suivant
+        }
+
+        if (maxAge != null) {
+            minBirthdate = today.minusYears(maxAge + 1).plusDays(1); // inclus ceux qui ont au moins maxAge ans
+        }
+
+        return eventRepository.findEventsWhereAllParticipantsAreInRange(minBirthdate, maxBirthdate);
+    }
+
 
 
 }

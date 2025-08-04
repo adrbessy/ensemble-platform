@@ -152,5 +152,13 @@ public class EventController {
         return ResponseEntity.ok(event);
     }
 
+    @GetMapping("/search")
+    public List<Event> searchEvents(
+            @RequestParam(required = false) Integer minAge,
+            @RequestParam(required = false) Integer maxAge) {
+        return eventService.searchEvents(minAge, maxAge);
+    }
+
+
 
 }
