@@ -2,6 +2,7 @@
 package com.ensemble.controller;
 
 import com.ensemble.dto.EventDTO;
+import com.ensemble.dto.UserDto;
 import com.ensemble.model.Event;
 import com.ensemble.model.EventVisibility;
 import com.ensemble.model.Group;
@@ -44,20 +45,23 @@ public class EventController {
     }
 
     @GetMapping
-    public List<Event> getAll() {
+    public List<EventDTO> getAll() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 
-        // Si utilisateur non connecté → renvoyer uniquement les événements publics
+        List<Event> events;
+
         if (auth == null || !auth.isAuthenticated() || auth.getPrincipal().equals("anonymousUser")) {
-            return eventService.findByVisibility(EventVisibility.PUBLIC);
+            events = eventService.findByVisibility(EventVisibility.PUBLIC);
+        } else {
+            String email = auth.getName();
+            User user = userRepo.findByEmail(email).orElseThrow();
+            List<Group> userGroups = groupRepository.findByMembers_Id(user.getId());
+            events = eventService.findVisibleEvents(user, userGroups);
         }
 
-        String email = auth.getName();
-        User user = userRepo.findByEmail(email).orElseThrow();
-        List<Group> userGroups = groupRepository.findByMembers_Id(user.getId());
-
-        return eventService.findVisibleEvents(user, userGroups);
+        return events.stream().map(eventService::mapToDto).toList(); // ✅ ici
     }
+
 
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -92,6 +96,14 @@ public class EventController {
 
         event.getParticipants().add(user);
         event.setVisibility(dto.getVisibility());
+
+        if (dto.getVisibility() == EventVisibility.CUSTOM && dto.getInvitedUserIds() != null) {
+            List<User> allowedUsers = dto.getInvitedUserIds().stream()
+                    .map(id -> userRepo.findById(id)
+                            .orElseThrow(() -> new RuntimeException("Utilisateur autorisé introuvable avec l'id " + id)))
+                    .toList();
+            event.setAllowedUsers(allowedUsers);
+        }
 
         if (dto.getVisibility() == EventVisibility.GROUP && dto.getGroupId() != null) {
             Group group = groupRepository.findById(dto.getGroupId())
@@ -158,7 +170,6 @@ public class EventController {
             @RequestParam(required = false) Integer maxAge) {
         return eventService.searchEvents(minAge, maxAge);
     }
-
 
 
 }

@@ -17,7 +17,7 @@
             (click)="selectTag(t)"
             class="badge px-3 py-2"
             [ngClass]="{
-              'bg-warning text-dark': event.tag === t,
+              'bg-success text-white': event.tag === t,
               'bg-light border text-dark': event.tag !== t
             }"
             style="cursor: pointer"
@@ -29,8 +29,8 @@
         <!-- Barre de recherche -->
         <input
           type="text"
-          class="form-control"
-          placeholder="Rechercher un tag..."
+          class="form-control tag-search-input"
+          placeholder="🔍 Rechercher un tag..."
           [(ngModel)]="searchTag"
           (ngModelChange)="onSearchTagChange()"
         />
@@ -145,6 +145,9 @@
       <div *ngIf="locationError" class="text-danger small mt-1">
         Le lieu est obligatoire. Veuillez sélectionner un lieu dans la liste.
       </div>
+      <small class="text-muted d-block mt-1">
+        🏠 Si l’événement a lieu à votre domicile, vous pouvez indiquer un lieu public proche (ex: arrêt, commerce...) et transmettre l’adresse exacte aux participants via le chat.
+      </small>
 
       <button type="button" class="btn btn-primary w-100 mt-4" (click)="nextStep()">Suivant</button>
     </div>

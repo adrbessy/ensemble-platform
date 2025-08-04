@@ -294,6 +294,14 @@ console.log("Âge min/max appliqués :", this.ageMin, this.ageMax);
      this.eventService.searchEvents(this.ageMin, this.ageMax).subscribe({
       next: (events) => {
         console.log("Événements reçus du backend :", events);
+
+            // 🔍 Log des activités privées CUSTOM
+        events.forEach(e => {
+          if (e.visibility === 'CUSTOM') {
+            console.log(`🔍 CUSTOM - ${e.description}`, e.allowedUsers?.map((u: any) => u.username));
+          }
+        });
+
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
@@ -544,6 +552,22 @@ console.log('🔘 Filtre "amis présents" actif :', this.onlyWithFriends);
     }
 
     if (!matchesLocation) return false;
+
+    // 🔒 Gestion de la visibilité de l'événement
+    if (event.visibility === 'FRIENDS_ONLY') {
+      const isOrganizer = event.organizer?.id === this.currentUserId;
+      const isFriend = this.userContacts.some(c => (typeof c === 'number' ? c : c.id) === event.organizer?.id);
+      if (!isOrganizer && !isFriend) return false;
+    }
+
+    if (event.visibility === 'CUSTOM') {
+      const isParticipant = this.hasUserParticipated(event);
+      const isAllowed = event.allowedUsers?.some((u: any) => u.id === this.currentUserId);
+      const isOrganizer = event.organizer?.id === this.currentUserId;
+      if (!isOrganizer && !isParticipant && !isAllowed) {
+        return false;
+      }
+    }
 
     // 🧑‍🤝‍🧑 Amis présents
     const contactIds = this.userContacts.map(c => typeof c === 'number' ? c : c.id);

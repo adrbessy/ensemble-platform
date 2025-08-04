@@ -2,3 +2,7 @@
   max-width: 720px;
   margin: auto;
 }
+
+.tag-search-input {
+  max-width: 400px; /* ou 300px selon ton design */
+}

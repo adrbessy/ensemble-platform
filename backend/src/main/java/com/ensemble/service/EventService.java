@@ -1,6 +1,8 @@
 
 package com.ensemble.service;
 
+import com.ensemble.dto.EventDTO;
+import com.ensemble.dto.UserDto;
 import com.ensemble.model.Event;
 import com.ensemble.model.EventVisibility;
 import com.ensemble.model.Group;
@@ -64,29 +66,31 @@ public class EventService {
 
         return allEvents.stream()
                 .filter(event -> {
-                    // ✅ Toujours visible si public
-                    if (event.getVisibility() == EventVisibility.PUBLIC) return true;
+                    if (event.getVisibility() == EventVisibility.PUBLIC)
+                        return true;
 
-                    // ✅ Visible si créateur
-                    if (event.getOrganizer().getId().equals(user.getId())) return true;
+                    if (event.getOrganizer().getId().equals(user.getId()))
+                        return true;
 
-                    // ✅ Visible si groupe et utilisateur membre du groupe
                     if (event.getVisibility() == EventVisibility.GROUP &&
                             event.getGroup() != null &&
-                            userGroups.stream().anyMatch(g -> g.getId().equals(event.getGroup().getId()))) {
+                            userGroups.stream().anyMatch(g -> g.getId().equals(event.getGroup().getId())))
                         return true;
-                    }
 
                     if (event.getVisibility() == EventVisibility.FRIENDS_ONLY &&
-                            event.getOrganizer().getContacts().contains(user)) {
+                            event.getOrganizer().getContacts().contains(user))
                         return true;
-                    }
 
-                    // ❌ Sinon, non visible
+                    // ✅ Ajout du cas CUSTOM ici
+                    if (event.getVisibility() == EventVisibility.CUSTOM &&
+                            event.getAllowedUsers().contains(user))
+                        return true;
+
                     return false;
                 })
                 .collect(Collectors.toList());
     }
+
 
     public Event findByIdVisibleToUser(Long id, User user) {
         Event event = eventRepository.findById(id).orElseThrow();
@@ -136,6 +140,35 @@ public class EventService {
         return eventRepository.findEventsWhereAllParticipantsAreInRange(minBirthdate, maxBirthdate);
     }
 
+    public EventDTO mapToDto(Event event) {
+        EventDTO dto = new EventDTO();
+        dto.setTitle(event.getTitle());
+        dto.setDescription(event.getDescription());
+        dto.setPlaceName(event.getPlaceName());
+        dto.setLocation(event.getLocation());
+        dto.setLatitude(event.getLatitude());
+        dto.setLongitude(event.getLongitude());
+        dto.setDate(event.getDate());
+        dto.setStartTime(event.getStartTime());
+        dto.setEndTime(event.getEndTime());
+        dto.setMinParticipants(event.getMinParticipants());
+        dto.setMaxParticipants(event.getMaxParticipants());
+        dto.setMinAge(event.getMinAge());
+        dto.setMaxAge(event.getMaxAge());
+        dto.setGenderRequirement(event.getGenderRequirement());
+        dto.setOrganizerId(event.getOrganizer().getId());
+        dto.setTag(event.getTag());
+        dto.setVisibility(event.getVisibility());
+        dto.setGroupId(event.getGroup() != null ? event.getGroup().getId() : null);
 
+        // ⬇️ Ajoute les utilisateurs autorisés si CUSTOM
+        if (event.getVisibility() == EventVisibility.CUSTOM && event.getAllowedUsers() != null) {
+            dto.setAllowedUsers(event.getAllowedUsers().stream()
+                    .map(UserDto::new)
+                    .toList());
+        }
+
+        return dto;
+    }
 
 }

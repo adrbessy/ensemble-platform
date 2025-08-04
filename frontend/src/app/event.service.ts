@@ -6,6 +6,7 @@ import { environment } from 'src/environments/environment';
 export interface Event {
   id: number;
   title: string;
+  description: string;
   date: string;
   location: string;
   latitude: number;
@@ -16,6 +17,8 @@ export interface Event {
   participants: { id: number; gender?: string }[];
   organizer: { id: number };
   genderRequirement?: string;
+  visibility: 'PUBLIC' | 'FRIENDS_ONLY' | 'GROUP' | 'CUSTOM';
+  allowedUsers?: { id: number; username: string }[];
 }
 
 

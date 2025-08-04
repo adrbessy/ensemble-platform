@@ -4,6 +4,7 @@ import com.ensemble.model.EventVisibility;
 import lombok.Data;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Data
 public class EventDTO {
@@ -26,4 +27,6 @@ public class EventDTO {
 
     private EventVisibility visibility;
     private Long groupId;
+    private List<UserDto> allowedUsers;
+    private List<Long> invitedUserIds;
 }

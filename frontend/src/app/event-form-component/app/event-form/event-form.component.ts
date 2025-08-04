@@ -112,11 +112,11 @@ export class EventFormComponent {
     'Atelier de langues', 'Bowling', 'Escape game', 'Cinéma', 'Karaoké', 'Pique-nique', 'Yoga/méditation/pilates', 'Jogging/Running',
     'Ping-pong', 'Badminton', 'Tennis', 'Squash', 'Footing', 'Cyclisme', 'Natation', 'Escalade', 'Arts martiaux', 'Billard', 'Taromancie', 
     'Photographie', 'Cuisine', 'Bricolage', 'Jardinage', 'Musique', 'Danse', 'Théâtre', 'Peinture/Dessin', 'Écriture/Poésie', 'Apéro', 
-    'Pétanque'
+    'Pétanque', 'Boire un verre'
   ];
   tagCounts: { [tag: string]: number } = {
     'jeux de société': 5,
-    'bar': 3,
+    'Boire un verre': 3,
     'randonnée': 6,
     'plage': 4,
     'musée': 1,
@@ -274,8 +274,8 @@ export class EventFormComponent {
 
   showEmojiList = false;
   emojis: string[] = [
-    '😊', '😍', '😁', '🥳', '😎', '🎉', '🔥', '❤️', '👍', '🙌', '💬',
-    '🌟', '🍕', '📅', '🎶', '☀️', '🏞️', '🎭', '👥', '🏃‍♂️', '🏃‍♀️', '🃏', '👋'
+    '😊', '😍', '😁', '🥳', '😎', '🎉', '🔥', '❤️', '👍', '🙌', '👋', '💬',
+    '🌟', '🍕', '📅', '🎶', '☀️', '🏞️', '🎭', '👥', '🏃‍♂️', '🏃‍♀️', '🃏', '🍻'
   ];
   toggleEmojiPanel() {
     this.showEmojiList = !this.showEmojiList;
