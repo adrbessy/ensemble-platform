@@ -22,5 +22,7 @@ public class Message {
 
     private LocalDateTime timestamp = LocalDateTime.now();
 
-    // Getters et setters
+    @ManyToOne
+    @JoinColumn(name = "conversation_id")
+    private Conversation conversation;
 }

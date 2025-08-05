@@ -1,0 +1,20 @@
+<h5 class="fw-bold">Créer une conversation de groupe</h5>
+
+<div class="mb-3">
+  <label for="groupName" class="form-label">Nom du groupe</label>
+  <input type="text" id="groupName" class="form-control" [(ngModel)]="groupName" placeholder="Ex : Sortie plage 🍹" />
+</div>
+
+<div class="mb-3">
+  <label for="users" class="form-label">Inviter des utilisateurs</label>
+  <select id="users" class="form-select" [(ngModel)]="selectedUserIds" multiple>
+    <option *ngFor="let user of contacts" [value]="user.id">
+      {{ user.firstName }} {{ user.lastName }}
+    </option>
+  </select>
+</div>
+
+<div class="text-end">
+  <button class="btn btn-secondary me-2" (click)="onCancel()">Annuler</button>
+  <button class="btn btn-primary" (click)="createGroupConversation()">Créer</button>
+</div>

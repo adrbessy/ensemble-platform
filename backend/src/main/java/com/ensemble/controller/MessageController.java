@@ -55,6 +55,11 @@ public class MessageController {
 
         return messageRepo.findBySenderAndRecipientOrRecipientAndSender(current, friend, current, friend);
     }
+
+    @GetMapping("/conversation/{conversationId}")
+    public List<Message> getMessagesByConversation(@PathVariable Long conversationId) {
+        return messageRepo.findByConversationIdOrderByTimestampAsc(conversationId);
+    }
 }
 
 

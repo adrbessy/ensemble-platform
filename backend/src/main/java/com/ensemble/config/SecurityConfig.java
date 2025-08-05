@@ -51,6 +51,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/uploads/**").permitAll()
                         .requestMatchers("/api/users/**").authenticated()
                         .requestMatchers("/api/messages/**").authenticated()
+                        .requestMatchers("/api/conversations/**").authenticated()
+
 
 
                         .anyRequest().authenticated()

@@ -32,6 +32,7 @@ import { MonProfilComponent } from './mon-profil/mon-profil.component';
 import { ChatComponent } from './chat/chat.component';
 import { LocationSelectorComponent } from './location-selector/location-selector.component';
 import { PickerModule } from '@ctrl/ngx-emoji-mart';
+import { CreateGroupConversationComponent } from './components/chat/create-group-conversation/create-group-conversation.component';
 
 
 
@@ -44,7 +45,9 @@ registerLocaleData(localeFr);
     EventDetailComponent,
     MonProfilComponent,
     ChatComponent,
-    LocationSelectorComponent
+    LocationSelectorComponent,
+    CreateGroupConversationComponent,
+    CreateGroupConversationComponent
   ],
 
   imports: [RouterModule, BrowserAnimationsModule, // OBLIGATOIRE pour ngx-toastr

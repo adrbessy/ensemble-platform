@@ -104,7 +104,9 @@
 
         <!-- Heure de fin -->
         <div class="col-md-3">
-          <label class="form-label fw-bold">Heure fin</label>
+          <label class="form-label fw-bold">
+            Heure fin <span class="text-muted" style="font-weight: normal;">(facultatif)</span>
+          </label>
           <input
             type="time"
             lang="fr"
@@ -112,8 +114,8 @@
             [(ngModel)]="event.endTime"
             name="endTime"
           />
-          <small class="text-muted">Facultatif</small>
         </div>
+
       </div>
 
 
@@ -128,26 +130,28 @@
       </div>
 
       <!-- Lieu avec autocomplétion -->
-      <div>
-        <label class="form-label fw-bold">📍 Lieu</label>
-        <input
-          #searchInput
-          type="text"
-          class="form-control"
-          placeholder="Rechercher un lieu (ex: Café Auguste)"
-        />
+      <div class="row g-3 mt-3">
+        <div>
+          <label class="form-label fw-bold">📍 Lieu</label>
+          <input
+            #searchInput
+            type="text"
+            class="form-control"
+            placeholder="Rechercher un lieu (ex: Café Auguste)"
+          />
+        </div>
+        <!-- Adresse récupérée automatiquement -->
+        <div *ngIf="event.address">
+          <label class="form-label mt-2">Adresse détectée</label>
+          <input class="form-control" [value]="event.address" readonly />
+        </div>
+        <div *ngIf="locationError" class="text-danger small mt-1">
+          Le lieu est obligatoire. Veuillez sélectionner un lieu dans la liste.
+        </div>
+        <small class="text-muted d-block mt-1">
+          🏠 Si l’événement a lieu à votre domicile, vous pouvez indiquer un lieu public proche (ex: arrêt, commerce...) et transmettre l’adresse exacte aux participants via le chat.
+        </small>
       </div>
-      <!-- Adresse récupérée automatiquement -->
-      <div *ngIf="event.address">
-        <label class="form-label mt-2">Adresse détectée</label>
-        <input class="form-control" [value]="event.address" readonly />
-      </div>
-      <div *ngIf="locationError" class="text-danger small mt-1">
-        Le lieu est obligatoire. Veuillez sélectionner un lieu dans la liste.
-      </div>
-      <small class="text-muted d-block mt-1">
-        🏠 Si l’événement a lieu à votre domicile, vous pouvez indiquer un lieu public proche (ex: arrêt, commerce...) et transmettre l’adresse exacte aux participants via le chat.
-      </small>
 
       <button type="button" class="btn btn-primary w-100 mt-4" (click)="nextStep()">Suivant</button>
     </div>

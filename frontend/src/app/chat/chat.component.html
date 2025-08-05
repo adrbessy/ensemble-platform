@@ -1,22 +1,95 @@
 <div class="chat-container">
   <!-- Liste des conversations -->
   <div class="sidebar">
+    <!-- Bouton pour créer un groupe -->
+    <button class="btn btn-sm btn-outline-primary w-100 my-2" (click)="showCreateGroup = true">
+      ➕ Nouveau groupe
+    </button>
+
+    <!-- Affichage conditionnel -->
+    <app-create-group-conversation
+      *ngIf="showCreateGroup"
+      (groupCreated)="onGroupCreated()"
+      (cancel)="showCreateGroup = false"
+    ></app-create-group-conversation>
+
+    <button class="btn btn-outline-secondary w-100 mb-2" (click)="toggleNewPrivateConvForm()">
+  💬 Nouvelle discussion
+    </button>
+    <div *ngIf="showPrivateConvForm" class="mt-2">
+      <input type="text" class="form-control mb-2" placeholder="Rechercher un contact..."
+            [(ngModel)]="searchTerm">
+      <ul class="list-group">
+        <li 
+          class="list-group-item list-group-item-action" 
+          *ngFor="let friend of filteredFriends()" 
+          (click)="startPrivateConversation(friend.id)">
+          {{ friend.firstName }} {{ friend.lastName }}
+        </li>
+      </ul>
+    </div>
+
     <h5 class="fw-bold mb-3">Discussions</h5>
 
     <div class="conversation" 
     *ngFor="let conv of conversations" 
     [class.active]="conv.id === selectedConv?.id"
     (click)="selectConversation(conv)">
-      <div class="avatar">
-        <img 
-          *ngIf="conv.photoFilename"
-          [src]="'http://localhost:8080/uploads/photos/' + conv.photoFilename"
-          (error)="this.src='assets/default-avatar.png'"
-          class="rounded-circle"
-          width="40"
-          height="40"
-          alt="avatar" />
-      </div>
+    <div class="avatar">
+      <!-- Avatar pour une conversation de groupe -->
+      <ng-container *ngIf="conv.type === 'GROUP'; else singleAvatar">
+<div class="group-avatars">
+  <ng-container [ngSwitch]="conv.participants.length">
+
+    <!-- ✅ 1 participant -->
+    <img *ngSwitchCase="1"
+         [src]="'http://localhost:8080/uploads/photos/' + conv.participants[0].photoFilename"
+         (error)="this.src='assets/default-avatar.png'"
+         class="group-avatar-img one" />
+
+    <!-- ✅ 2 participants -->
+    <ng-container *ngSwitchCase="2">
+      <img *ngFor="let p of conv.participants; let i = index"
+           [src]="'http://localhost:8080/uploads/photos/' + p.photoFilename"
+           (error)="this.src='assets/default-avatar.png'"
+           [ngClass]="'two-' + i"
+           class="group-avatar-img" />
+    </ng-container>
+
+    <!-- ✅ 3 participants -->
+    <ng-container *ngSwitchCase="3">
+      <img *ngFor="let p of conv.participants; let i = index"
+           [src]="'http://localhost:8080/uploads/photos/' + p.photoFilename"
+           (error)="this.src='assets/default-avatar.png'"
+           [ngClass]="'three-' + i"
+           class="group-avatar-img" />
+    </ng-container>
+
+    <!-- ✅ 4 participants ou plus -->
+    <ng-container *ngSwitchDefault>
+      <img *ngFor="let p of conv.participants.slice(0, 4); let i = index"
+           [src]="'http://localhost:8080/uploads/photos/' + p.photoFilename"
+           (error)="this.src='assets/default-avatar.png'"
+           [ngClass]="'four-' + i"
+           class="group-avatar-img" />
+    </ng-container>
+
+  </ng-container>
+</div>
+
+      </ng-container>
+
+      <!-- Avatar pour une conversation privée -->
+      <ng-template #singleAvatar>
+        <img *ngIf="conv.photoFilename"
+            [src]="'http://localhost:8080/uploads/photos/' + conv.photoFilename"
+            (error)="this.src='assets/default-avatar.png'"
+            class="rounded-circle"
+            width="40"
+            height="40"
+            alt="avatar" />
+      </ng-template>
+    </div>
       <div class="info">
         <div class="name">{{ conv.name }}</div>
         <div class="last-message">{{ conv.lastMessage }}</div>
@@ -27,17 +100,41 @@
 
   <!-- Zone de messages -->
   <div class="chat-box">
-    <div class="header d-flex justify-content-between align-items-center">
+    <div class="header d-flex flex-column align-items-start mb-2">
       <div class="fw-bold">{{ selectedConv?.name }}</div>
+      <div class="participants text-muted small">
+        <ng-container *ngIf="selectedConv?.type === 'GROUP'">
+          Participants :
+          <span *ngFor="let p of selectedConv?.participants; let last = last">
+            {{ p.firstName }} {{ p.lastName }}<span *ngIf="!last">, </span>
+          </span>
+        </ng-container>
+      </div>
     </div>
 
+      <!-- 👇 Ajout des membres au groupe (si type GROUP) -->
+    <button 
+      *ngIf="selectedConv?.type === 'GROUP'" 
+      class="btn btn-outline-secondary btn-sm mx-3 my-2 d-flex align-items-center gap-2"
+      (click)="openAddMembersModal()">
+      <i class="bi bi-person-plus"></i> Ajouter des personnes
+    </button>
+
+
     <div class="messages" #messagesContainer *ngIf="currentUserId">
+
       <div *ngFor="let msg of selectedConv?.messages" 
           [class.mine]="msg.sender.id === currentUserId" 
           class="message">
+        
+        <div *ngIf="msg.sender.id !== currentUserId" class="sender-name text-muted small">
+          {{ msg.sender.firstName }} {{ msg.sender.lastName }}
+        </div>
+
         <span>{{ msg.content }}</span>
         <small class="text-muted">{{ msg.timestamp | date:'shortTime' }}</small>
       </div>
+
     </div>
 
 
@@ -56,10 +153,38 @@
   </div>
 </div>
 
+</div>
 
+  </div>
+
+
+<!-- ✅ Modale "Ajouter des personnes" tout en bas -->
+<div class="modal-backdrop" *ngIf="showAddMembersModal" (click)="closeAddMembersModal()"></div>
+<div class="modal-panel" *ngIf="showAddMembersModal">
+  <div class="modal-header">
+    <h5>Ajouter des personnes</h5>
+    <button class="close-btn" (click)="closeAddMembersModal()">×</button>
+  </div>
+  <div class="modal-body">
+    <input type="text" [(ngModel)]="searchTerm" class="form-control mb-2" placeholder="Rechercher un ami...">
+
+    <div *ngFor="let contact of filteredFriends()" class="form-check">
+      <input class="form-check-input"
+             type="checkbox"
+             [id]="'friend-' + contact.id"
+             [value]="contact.id"
+             [(ngModel)]="contact.selected"
+             [disabled]="isAlreadyInConversation(contact.id)">
+      <label class="form-check-label" [for]="'friend-' + contact.id">
+        {{ contact.firstName }} {{ contact.lastName }}
+      </label>
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn btn-secondary" (click)="closeAddMembersModal()">Annuler</button>
+    <button class="btn btn-primary" (click)="confirmAddMembers()">Ajouter</button>
+  </div>
 </div>
 
 
-
-  </div>
 </div>
