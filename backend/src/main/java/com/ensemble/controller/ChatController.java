@@ -1,5 +1,6 @@
 package com.ensemble.controller;
 
+import com.ensemble.dto.ConversationDTO;
 import com.ensemble.dto.GroupConversationRequest;
 import com.ensemble.model.Conversation;
 import com.ensemble.model.Message;
@@ -31,13 +32,7 @@ public class ChatController {
     }
 
     @GetMapping("/conversations")
-    public List<Conversation> getMyConversations(Principal principal) {
-        System.out.println("✅ Requête reçue sur /api/chat/conversations");
-        if (principal == null) {
-            System.out.println("❌ Principal est null !");
-        } else {
-            System.out.println("👤 Utilisateur connecté : " + principal.getName());
-        }
+    public List<ConversationDTO> getMyConversations(Principal principal) {
         return chatService.getMyConversations(principal.getName());
     }
 

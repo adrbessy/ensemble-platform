@@ -31,32 +31,56 @@ export class ChatComponent implements OnInit, AfterViewChecked {
     this.loadConversations(); 
   }
 
+  updateLastMessageTimestamp(conv: any, timestamp: string) {
+    conv.lastMessageTimestamp = new Date(timestamp).getTime();
+  }
+
   loadConversations() {
     this.chatService.getConversations().subscribe({
       next: (convos) => {
-        this.conversations = convos.map(conv => ({
-          id: conv.id,
-          name: conv.type === 'GROUP'
-            ? conv.name
-            : this.getOtherParticipantName(conv.participants),
-          photoFilename: conv.type === 'GROUP'
-            ? null
-            : this.getOtherParticipantPhoto(conv.participants),
-          type: conv.type,
-          messages: conv.messages ?? [], // assure-toi que les messages sont chargés
-          participants: conv.participants
-        }));
+        const loadMessagesPromises = convos.map(conv =>
+          this.chatService.getMessagesByConversation(conv.id).toPromise().then(messages => ({
+            ...conv,
+            messages: messages ?? [],
+          }))
+        );
 
-        // 🔃 Trie par date du dernier message
-        this.conversations.sort((a, b) => {
-          const aDate = new Date(a.messages?.at(-1)?.timestamp ?? 0).getTime();
-          const bDate = new Date(b.messages?.at(-1)?.timestamp ?? 0).getTime();
-          return bDate - aDate;
+        Promise.all(loadMessagesPromises).then(convsWithMessages => {
+          this.conversations = convsWithMessages.map(conv => {
+            const lastMsg = conv.messages.at(-1);
+            return {
+              id: conv.id,
+              name: conv.type === 'GROUP'
+                ? conv.name
+                : this.getOtherParticipantName(conv.participants),
+              photoFilename: conv.type === 'GROUP'
+                ? null
+                : this.getOtherParticipantPhoto(conv.participants),
+              type: conv.type,
+              messages: conv.messages,
+              participants: conv.participants,
+              lastMessage: lastMsg?.content ?? '',
+              lastMessageTimestamp: lastMsg ? new Date(lastMsg.timestamp).getTime() : 0
+            };
+          });
+
+          // 🧩 Log de vérification
+          console.log("🧩 Conversations après mapping :");
+          console.table(this.conversations.map(c => ({
+            id: c.id,
+            lastMessage: c.lastMessage,
+            lastMessageTimestamp: c.lastMessageTimestamp,
+          })));
+
+          // 🔃 Trie les conversations par date
+          this.conversations.sort((a, b) => {
+            return (b.lastMessageTimestamp ?? 0) - (a.lastMessageTimestamp ?? 0);
+          });
+
+          if (this.conversations.length > 0) {
+            this.selectConversation(this.conversations[0]);
+          }
         });
-
-        if (this.conversations.length > 0) {
-          this.selectConversation(this.conversations[0]);
-        }
       },
       error: (err) => {
         console.error("❌ Erreur lors du chargement des conversations", err);
@@ -106,23 +130,30 @@ export class ChatComponent implements OnInit, AfterViewChecked {
 
         // 🔔 Abonnement aux messages entrants
         this.chatService.onMessageReceived().subscribe((message: any) => {
+          console.log('📥 Nouveau message WebSocket reçu :', message);
           const conv = this.conversations.find(c => c.id === message.conversationId);
+          console.log('conv :',  conv);
 
           if (conv) {
             conv.messages.push(message);
-
-            // 💬 Mets la conversation en haut
+            this.updateLastMessageTimestamp(conv, message.timestamp);
+            conv.lastMessage = message.content;
             this.bumpConversationToTop(conv);
 
-            // ✅ Si c’est la conversation ouverte, déclenche une mise à jour
+            console.log('📦 Conversation mise à jour :', conv);
+
+            // 🆕 Force la détection du changement pour Angular
+            this.conversations = [...this.conversations];
+
             if (this.selectedConv?.id === conv.id) {
               this.scrollToBottom();
               this.cdr.detectChanges();
             }
-          } else {
-            // Cas où la conversation n'est pas encore chargée (optionnel)
-            this.loadConversations();
           }
+          else {
+              // Cas où la conversation n'est pas encore chargée (optionnel)
+              this.loadConversations();
+            }
         });
       },
       error: (err) => {
@@ -204,7 +235,6 @@ handleClickOutside(event: MouseEvent) {
 
   sendMessage() {
     if (!this.newMessage.trim() || !this.selectedConv) return;
-
     this.chatService.sendMessageToConversation(this.selectedConv.id, this.newMessage.trim()).subscribe({
       next: () => {
         const newMsg = {
@@ -215,10 +245,15 @@ handleClickOutside(event: MouseEvent) {
         };
 
         this.selectedConv.messages.push(newMsg);
-        this.newMessage = '';
+        this.updateLastMessageTimestamp(this.selectedConv, newMsg.timestamp);  
+        this.selectedConv.lastMessage = newMsg.content;
+        this.bumpConversationToTop(this.selectedConv);                         // 👈 après la mise à jour
 
-        // 💬 Remonter la conversation
-        this.bumpConversationToTop(this.selectedConv);
+        console.log('✉️ Message envoyé - conv mise à jour :', this.selectedConv);
+
+        // 🆕 Force la mise à jour de la vue
+        this.conversations = [...this.conversations];
+        this.newMessage = '';
       },
       error: (err) => {
         console.error("Erreur d'envoi", err);
@@ -232,6 +267,19 @@ handleClickOutside(event: MouseEvent) {
       const [conversation] = this.conversations.splice(index, 1);
       this.conversations.unshift(conversation);
     }
+
+    // ✅ Met à jour la timestamp si manquante (optionnel si tu le fais déjà ailleurs)
+    if (!conv.lastMessageTimestamp && conv.messages?.length) {
+      const lastMsg = conv.messages.at(-1);
+      if (lastMsg) {
+        conv.lastMessageTimestamp = new Date(lastMsg.timestamp).getTime();
+      }
+    }
+
+    // ✅ Trie toutes les conversations
+    this.conversations.sort((a, b) => {
+      return (b.lastMessageTimestamp ?? 0) - (a.lastMessageTimestamp ?? 0);
+    });
   }
 
   newMembers: number[] = [];

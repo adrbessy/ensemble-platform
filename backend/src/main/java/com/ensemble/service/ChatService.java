@@ -1,6 +1,8 @@
 package com.ensemble.service;
 
+import com.ensemble.dto.ConversationDTO;
 import com.ensemble.dto.GroupConversationRequest;
+import com.ensemble.dto.MessageDTO;
 import com.ensemble.model.Conversation;
 import com.ensemble.model.Message;
 import com.ensemble.model.User;
@@ -11,6 +13,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class ChatService {
@@ -44,9 +47,23 @@ public class ChatService {
         return conversationRepo.save(conversation);
     }
 
-    public List<Conversation> getMyConversations(String email) {
+    public List<ConversationDTO> getMyConversations(String email) {
         User user = userRepo.findByEmail(email).orElseThrow();
-        return conversationRepo.findByParticipantId(user.getId());
+        List<Conversation> conversations = conversationRepo.findByParticipantId(user.getId());
+
+        return conversations.stream().map(conv -> {
+            ConversationDTO dto = new ConversationDTO();
+            dto.setId(conv.getId());
+            dto.setType(conv.getType());
+            dto.setName(conv.getName());
+            dto.setParticipants(conv.getParticipants());
+
+            messageRepo.findTopByConversationOrderByTimestampDesc(conv)
+                    .map(MessageDTO::fromEntity)
+                    .ifPresent(dto::setLastMessage);
+
+            return dto;
+        }).collect(Collectors.toList());
     }
 
     public Conversation getOrCreatePrivateConversation(User user1, User user2) {
