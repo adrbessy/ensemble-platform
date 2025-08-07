@@ -7,13 +7,12 @@ Chill and Go est une plateforme web conçue pour faciliter la création de liens
 Page d'accueil
     Page affichant la liste des activités
 
-
 Navbar déconnectée
     [Chill and Go] ----------- [Connexion] [Inscription]
     Au clic sur Chill and Go, on arrive à la page affichant la liste des activités.
 Navbar connectée
-    [Chill and Go] ----------- [Créer une activité] [Contacts] [Groupes] [messagerie] [notifications] [photo de profil]
-    Au clic sur la photo de profil, on arrive sur la page de compte/paramètres
+    [Chill and Go] ----------- [Activités] [Créer une activité] [Logo messagerie] [Logo notifications] [photo de profil (avatar)]
+    Au clic sur la photo de profil, on arrive sur la page de profil.
 
 Page d'Inscription
     Champs obligatoires :
@@ -21,23 +20,29 @@ Page d'Inscription
     -> son prénom, 
     -> son nom,
     -> son email,
-    -> un mot de passe (avec confirmation),
+    -> un mot de passe (8 caractère minimum),
+    -> confirmation du mot de passe,
     -> son sexe (homme ou femme ou autre), 
-    -> sa date de naissance (minimum 16 ans)
+    -> sa date de naissance (minimum 16 ans) de format dd/mm/yyyy
+    -> acceptation des GCU.
+    Bouton "S'inscrire"
     
 Page de connexion
     -> son email,
     -> un mot de passe.
-    possibilité pour l'utilisateur de regénérer un mot de passe en lui envoyant un mail si il l'a oublié.
+    possibilité pour l'utilisateur de regénérer un mot de passe en lui envoyant un mail si il l'a oublié avec le bouton "Mot de passe oublié".
+    Bouton "Se connecter"
 
 Page affichant la liste des activités :
+
     -> Affichage des filtres actifs collé sous la navbar, tout le temps visible :
         -> Bouton "Mes activités" (uniquement présent quand connecté) : Affiche toutes les activités auxquel l'user participe peu importe les autres filtres activés, peu importe la distance.
         -> Filtre localisation : Par défaut <10km, lorsque l'on clique sur le champ, on peut soit cliquer sur un input qui nous dit "Chercher une ville" et où on peut écrire une ville (avec complétion, propositions automatiques de villes), à ce moment là la ville est ajouté dans une étiquette, et l'input nous indique "Ajouter une autre ville". Ou alors on peut spécifier un rayon autour de nous avec des pas de 5km, 10km, 20km, 30km, avec une carte qui fait un cercle autour de notre position avec le rayon spécifié. Donc soit la ville soit la distance par rapport à notre position. Puis un bouton Valider.
         -> Filtre "Avec Amis" (uniquement présent quand connecté). Ce filtre affiche les activités dans lequel au moins amis de l'user est présent en tenant compte du filtre Localisation.
         -> Filtre Parité. Ce filtre affiche les activités pour lesquelles la parité est présente. Si les filtres amis et parité sont activés, alors on a à la fois les activités dans lesquelles appraissent les amis et les activités où il y a parité qui sont affichés. ça ne doit pas être une intersection.
         -> Bouton (3 petits points ou + Filtres) qui mène à la page des filtres. Si on sélectionne plusieurs filtres, ça doit être des réunions et pas des intersections.
-    -> Affichage des événements (avec des places restantes) par date (avec possibilité de cliquer sur la date pour masquer les événements prévus à cette date, si on reclique sur la date, ça les refait apparaître).
+
+    -> Affichage des événements (quand connecté ou non connecté) avec des places restantes par date (avec possibilité de cliquer sur la date pour masquer les événements prévus à cette date, si on reclique sur la date, ça les refait apparaître).
     -> Chaque événement a :
         -> Une heure de début (heure de fin facultative)
         -> Lieu (nom du lieu + ville)

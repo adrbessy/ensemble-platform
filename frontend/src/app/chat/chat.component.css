@@ -53,7 +53,7 @@
 
 .messages {
   flex: 1;
-  padding: 1rem;
+  padding: 1rem 1rem 1rem 0.25rem;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -61,16 +61,17 @@
 }
 
 .message {
-  max-width: 70%;
-  padding: 0.6rem 1rem;
+  width: fit-content;
+  max-width: 80%;
+  padding: 0.4rem 0.75rem;
   border-radius: 1rem;
-  position: relative;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   line-height: 1.4;
   color: #212529;
   display: inline-block;
   word-wrap: break-word;
 }
+
 
 .message small {
   display: block;
@@ -257,3 +258,73 @@
   justify-content: flex-end;
   margin-top: 1rem;
 }
+
+.list-group-item-action {
+  cursor: pointer;
+}
+
+.message-wrapper {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.25rem;
+}
+
+.message-wrapper.mine {
+  justify-content: flex-end;
+}
+
+.sender-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.sender-info {
+  background-color: #f1f0f0;
+  border-radius: 1rem;
+  padding: 0.6rem 1rem;
+  max-width: 70%;
+}
+
+.sender-name {
+  font-weight: bold;
+  font-size: 0.85rem;
+  margin-bottom: 0.1rem;
+  line-height: 1;
+}
+
+.message-content {
+  font-size: 0.95rem;
+  line-height: 1.4;
+  color: #212529;
+}
+
+.sender-bubble {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  background-color: #f1f0f0;
+  border-radius: 1rem;
+  padding: 0.5rem 2.5rem 0.5rem 0.75rem; 
+  max-width: none; /* limite max */
+  width: fit-content; /* ajuste à la taille du contenu */
+  align-self: flex-start;
+}
+
+.bubble-content {
+  display: flex;
+  flex-direction: column;
+  min-width: 0; /* important pour wrapping du texte */
+}
+
+.timestamp {
+  position: absolute;
+  bottom: 4px;
+  right: 10px;
+  font-size: 0.7rem;
+  color: #999;
+}
+

@@ -3,6 +3,8 @@ import jwt_decode from 'jwt-decode';
 import { AuthService } from '../auth.service';
 import { UserService } from '../services/user.service';
 import { Router } from '@angular/router';
+import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
+import { FriendsModalComponent } from '../friends-modal/friends-modal.component';
 
 @Component({
   selector: 'app-mon-profil',
@@ -20,7 +22,10 @@ export class MonProfilComponent {
   };
 
 
-  constructor(private authService: AuthService,  private userService: UserService, private router: Router) {}
+  constructor(private authService: AuthService,  
+    private userService: UserService, 
+    private router: Router,
+    private modalService: NgbModal) {}
 
   ngOnInit(): void {
       this.loadProfile();
@@ -211,6 +216,10 @@ export class MonProfilComponent {
     });
   }
 
+  openFriendsModal() {
+    const modalRef = this.modalService.open(FriendsModalComponent, { size: 'md' });
+    modalRef.componentInstance.contacts = this.user.contacts;
+  }
 
 
 }

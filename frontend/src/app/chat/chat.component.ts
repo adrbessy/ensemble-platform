@@ -341,6 +341,16 @@ handleClickOutside(event: MouseEvent) {
     this.showAddMembersModal = false;
   }
 
+  userColors: { [key: number]: string } = {};
+
+  getColorForUser(userId: number): string {
+    if (!this.userColors[userId]) {
+      // génère une couleur basée sur l'ID
+      const colors = ['#e74c3c', '#3498db', '#2ecc71', '#9b59b6', '#e67e22', '#1abc9c'];
+      this.userColors[userId] = colors[userId % colors.length];
+    }
+    return this.userColors[userId];
+  }
 
 }
 

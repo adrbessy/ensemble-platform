@@ -115,9 +115,11 @@
       <!-- 👇 Ajout des membres au groupe (si type GROUP) -->
     <button 
       *ngIf="selectedConv?.type === 'GROUP'" 
-      class="btn btn-outline-secondary btn-sm mx-3 my-2 d-flex align-items-center gap-2"
+      class="btn btn-light btn-sm px-2 py-1 ms-3 mt-1 d-flex align-items-center gap-1"
+      style="font-size: 0.85rem;"
       (click)="openAddMembersModal()">
-      <i class="bi bi-person-plus"></i> Ajouter des personnes
+      <i class="bi bi-person-plus" style="font-size: 1rem;"></i>
+      <span>Ajouter des amis</span>
     </button>
 
 
@@ -125,14 +127,32 @@
 
       <div *ngFor="let msg of selectedConv?.messages" 
           [class.mine]="msg.sender.id === currentUserId" 
-          class="message">
-        
-        <div *ngIf="msg.sender.id !== currentUserId" class="sender-name text-muted small">
-          {{ msg.sender.firstName }} {{ msg.sender.lastName }}
-        </div>
+          class="message-wrapper">
 
-        <span>{{ msg.content }}</span>
-        <small class="text-muted">{{ msg.timestamp | date:'shortTime' }}</small>
+        <div class="message" [class.mine]="msg.sender.id === currentUserId">
+          <!-- Avatar et nom pour les autres -->
+          <ng-container *ngIf="msg.sender.id !== currentUserId">
+            <div class="sender-bubble">
+              <img class="sender-avatar" 
+                  [src]="'http://localhost:8080/uploads/photos/' + msg.sender.photoFilename"
+                  (error)="this.src='assets/default-avatar.png'" />
+
+              <div class="bubble-content">
+                <div class="sender-name" [ngStyle]="{ color: getColorForUser(msg.sender.id) }">
+                  {{ msg.sender.firstName }} {{ msg.sender.lastName }}
+                </div>
+                <div class="message-content">{{ msg.content }}</div>
+                <small class="text-muted timestamp">{{ msg.timestamp | date:'shortTime' }}</small>
+              </div>
+            </div>
+          </ng-container>
+
+          <!-- Ton propre message -->
+          <ng-container *ngIf="msg.sender.id === currentUserId">
+            <div class="message-content">{{ msg.content }}</div>
+            <small class="text-muted">{{ msg.timestamp | date:'shortTime' }}</small>
+          </ng-container>
+        </div>
       </div>
 
     </div>
