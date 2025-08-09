@@ -1,5 +1,6 @@
 package com.ensemble.controller;
 
+import com.ensemble.dto.MessageDTO;
 import com.ensemble.model.Message;
 import com.ensemble.model.User;
 import com.ensemble.repository.MessageRepository;
@@ -57,8 +58,11 @@ public class MessageController {
     }
 
     @GetMapping("/conversation/{conversationId}")
-    public List<Message> getMessagesByConversation(@PathVariable Long conversationId) {
-        return messageRepo.findByConversationIdOrderByTimestampAsc(conversationId);
+    public List<MessageDTO> getMessagesByConversation(@PathVariable Long conversationId) {
+        return messageRepo.findByConversationIdOrderByTimestampAsc(conversationId)
+                .stream()
+                .map(MessageDTO::fromMessage)
+                .toList();
     }
 }
 

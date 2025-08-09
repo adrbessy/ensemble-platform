@@ -35,47 +35,47 @@
     *ngFor="let conv of conversations" 
     [class.active]="conv.id === selectedConv?.id"
     (click)="selectConversation(conv)">
-    <div class="avatar">
-      <!-- Avatar pour une conversation de groupe -->
-      <ng-container *ngIf="conv.type === 'GROUP'; else singleAvatar">
-<div class="group-avatars">
-  <ng-container [ngSwitch]="conv.participants.length">
+      <div class="avatar">
+        <!-- Avatar pour une conversation de groupe -->
+        <ng-container *ngIf="conv.type === 'GROUP'; else singleAvatar">
+          <div class="group-avatars">
+            <ng-container [ngSwitch]="conv.participants.length">
 
-    <!-- ✅ 1 participant -->
-    <img *ngSwitchCase="1"
-         [src]="'http://localhost:8080/uploads/photos/' + conv.participants[0].photoFilename"
-         (error)="this.src='assets/default-avatar.png'"
-         class="group-avatar-img one" />
+              <!-- ✅ 1 participant -->
+              <img *ngSwitchCase="1"
+                  [src]="'http://localhost:8080/uploads/photos/' + conv.participants[0].photoFilename"
+                  (error)="this.src='assets/default-avatar.png'"
+                  class="group-avatar-img one" />
 
-    <!-- ✅ 2 participants -->
-    <ng-container *ngSwitchCase="2">
-      <img *ngFor="let p of conv.participants; let i = index"
-           [src]="'http://localhost:8080/uploads/photos/' + p.photoFilename"
-           (error)="this.src='assets/default-avatar.png'"
-           [ngClass]="'two-' + i"
-           class="group-avatar-img" />
-    </ng-container>
+              <!-- ✅ 2 participants -->
+              <ng-container *ngSwitchCase="2">
+                <img *ngFor="let p of conv.participants; let i = index"
+                    [src]="'http://localhost:8080/uploads/photos/' + p.photoFilename"
+                    (error)="this.src='assets/default-avatar.png'"
+                    [ngClass]="'two-' + i"
+                    class="group-avatar-img" />
+            </ng-container>
 
-    <!-- ✅ 3 participants -->
-    <ng-container *ngSwitchCase="3">
-      <img *ngFor="let p of conv.participants; let i = index"
-           [src]="'http://localhost:8080/uploads/photos/' + p.photoFilename"
-           (error)="this.src='assets/default-avatar.png'"
-           [ngClass]="'three-' + i"
-           class="group-avatar-img" />
-    </ng-container>
+            <!-- ✅ 3 participants -->
+            <ng-container *ngSwitchCase="3">
+              <img *ngFor="let p of conv.participants; let i = index"
+                  [src]="'http://localhost:8080/uploads/photos/' + p.photoFilename"
+                  (error)="this.src='assets/default-avatar.png'"
+                  [ngClass]="'three-' + i"
+                  class="group-avatar-img" />
+            </ng-container>
 
-    <!-- ✅ 4 participants ou plus -->
-    <ng-container *ngSwitchDefault>
-      <img *ngFor="let p of conv.participants.slice(0, 4); let i = index"
-           [src]="'http://localhost:8080/uploads/photos/' + p.photoFilename"
-           (error)="this.src='assets/default-avatar.png'"
-           [ngClass]="'four-' + i"
-           class="group-avatar-img" />
-    </ng-container>
+            <!-- ✅ 4 participants ou plus -->
+            <ng-container *ngSwitchDefault>
+              <img *ngFor="let p of conv.participants.slice(0, 4); let i = index"
+                  [src]="'http://localhost:8080/uploads/photos/' + p.photoFilename"
+                  (error)="this.src='assets/default-avatar.png'"
+                  [ngClass]="'four-' + i"
+                  class="group-avatar-img" />
+            </ng-container>
 
-  </ng-container>
-</div>
+          </ng-container>
+        </div>
 
       </ng-container>
 
@@ -94,6 +94,8 @@
         <div class="name">{{ conv.name }}</div>
         <div class="last-message">{{ conv.lastMessage }}</div>
       </div>
+        <!-- ✅ Ici le badge -->
+      <span *ngIf="conv.unread" class="unread-badge"></span>
     </div>
 
   </div>

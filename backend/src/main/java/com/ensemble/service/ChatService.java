@@ -3,6 +3,7 @@ package com.ensemble.service;
 import com.ensemble.dto.ConversationDTO;
 import com.ensemble.dto.GroupConversationRequest;
 import com.ensemble.dto.MessageDTO;
+import com.ensemble.dto.UserSummaryDTO;
 import com.ensemble.model.Conversation;
 import com.ensemble.model.Message;
 import com.ensemble.model.User;
@@ -50,20 +51,32 @@ public class ChatService {
     public List<ConversationDTO> getMyConversations(String email) {
         User user = userRepo.findByEmail(email).orElseThrow();
         List<Conversation> conversations = conversationRepo.findByParticipantId(user.getId());
-
         return conversations.stream().map(conv -> {
             ConversationDTO dto = new ConversationDTO();
             dto.setId(conv.getId());
             dto.setType(conv.getType());
             dto.setName(conv.getName());
-            dto.setParticipants(conv.getParticipants());
+
+            // 🔹 Conversion List<User> → List<UserSummaryDTO>
+            dto.setParticipants(
+                    conv.getParticipants()
+                            .stream()
+                            .map(usera -> new UserSummaryDTO(
+                                    usera.getId(),
+                                    usera.getFirstName(),
+                                    usera.getLastName(),
+                                    usera.getPhotoFilename()
+                            ))
+                            .collect(Collectors.toList())
+            );
 
             messageRepo.findTopByConversationOrderByTimestampDesc(conv)
-                    .map(MessageDTO::fromEntity)
+                    .map(MessageDTO::fromMessage)
                     .ifPresent(dto::setLastMessage);
 
             return dto;
         }).collect(Collectors.toList());
+
     }
 
     public Conversation getOrCreatePrivateConversation(User user1, User user2) {

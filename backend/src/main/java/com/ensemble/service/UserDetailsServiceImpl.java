@@ -5,6 +5,8 @@ import com.ensemble.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.*;
 import org.springframework.stereotype.Service;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.Authentication;
 
 import java.util.ArrayList;
 import java.util.Optional;
@@ -43,6 +45,18 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 
     public User save(User user) {
         return userRepository.save(user);
+    }
+
+    public User getCurrentAuthenticatedUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new RuntimeException("Aucun utilisateur connecté");
+        }
+
+        String email = authentication.getName(); // car tu as utilisé `email` dans `loadUserByUsername`
+
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé : " + email));
     }
 
 

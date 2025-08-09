@@ -32,12 +32,22 @@ export class ChatComponent implements OnInit, AfterViewChecked {
   }
 
   updateLastMessageTimestamp(conv: any, timestamp: string) {
-    conv.lastMessageTimestamp = new Date(timestamp).getTime();
+    conv.lastMessageTimestamp = this.chatService['toMillis']
+      ? (this.chatService as any).toMillis(timestamp) // si private, duplique une petite util ici
+      : new Date(this.chatService.normalizeIso(timestamp)).getTime();
   }
 
   loadConversations() {
+      // 🛡️ Protection si currentUserId pas encore initialisé
+    if (!this.currentUserId) {
+      console.warn("⏳ currentUserId pas encore défini, report du chargement des conversations.");
+      return;
+    }
     this.chatService.getConversations().subscribe({
       next: (convos) => {
+        // 🧹 on repart de zéro pour les pastilles
+        this.chatService.resetUnread();
+
         const loadMessagesPromises = convos.map(conv =>
           this.chatService.getMessagesByConversation(conv.id).toPromise().then(messages => ({
             ...conv,
@@ -48,6 +58,38 @@ export class ChatComponent implements OnInit, AfterViewChecked {
         Promise.all(loadMessagesPromises).then(convsWithMessages => {
           this.conversations = convsWithMessages.map(conv => {
             const lastMsg = conv.messages.at(-1);
+            const lastSenderId = this.getSenderId(lastMsg);
+
+            let isUnread = false;
+
+            if (lastMsg) {
+              console.log('DEBUG read/local',
+                conv.id,
+                'lastMsg=', lastMsg?.timestamp,
+                'lastRead=', this.chatService['localReadMap'].get(conv.id)
+              );
+
+              const alreadyRead = this.chatService.wasReadLocally(conv.id, lastMsg.timestamp);
+              console.log(
+                'UNREAD CHECK',
+                { convId: conv.id,
+                  lastMsg: this.chatService.normalizeIso(lastMsg.timestamp),
+                  lastRead: this.chatService['localReadMap'].get(conv.id),
+                  alreadyRead
+                }
+              );
+
+              if (lastSenderId === this.currentUserId || alreadyRead) {
+                // ✅ soit c'est moi qui ai envoyé, soit j'ai déjà lu → pas de pastille
+                this.chatService.clearUnreadForConversation(conv.id);
+                isUnread = false;
+              } else {
+                // 🔴 nouveau non lu
+                isUnread = true;
+                this.chatService.notifyUnreadForConversation(conv.id);
+              }
+            }
+
             return {
               id: conv.id,
               name: conv.type === 'GROUP'
@@ -60,7 +102,10 @@ export class ChatComponent implements OnInit, AfterViewChecked {
               messages: conv.messages,
               participants: conv.participants,
               lastMessage: lastMsg?.content ?? '',
-              lastMessageTimestamp: lastMsg ? new Date(lastMsg.timestamp).getTime() : 0
+              lastMessageTimestamp: lastMsg
+                ? (this.chatService as any).toMillis(lastMsg.timestamp)   // ou une util publique
+                : 0,
+              unread: isUnread // 🔁 utile pour l'affichage direct
             };
           });
 
@@ -77,9 +122,6 @@ export class ChatComponent implements OnInit, AfterViewChecked {
             return (b.lastMessageTimestamp ?? 0) - (a.lastMessageTimestamp ?? 0);
           });
 
-          if (this.conversations.length > 0) {
-            this.selectConversation(this.conversations[0]);
-          }
         });
       },
       error: (err) => {
@@ -120,19 +162,32 @@ export class ChatComponent implements OnInit, AfterViewChecked {
   selectedConv: any = null;
   newMessage = '';
   currentUserId!: number;
+  hasUnreadMessages: boolean = false;
+
 
   ngOnInit(): void {
     this.userService.getCurrentUser().subscribe({
       next: (user) => {
         this.currentUserId = user.id;
-        this.loadConversations();
+
+        // 🧠 1. Précharge les statuts de lecture depuis le backend
+        this.chatService.getAllReadStatuses().subscribe(statusMap => {
+          for (const [convId, ts] of Object.entries(statusMap)) {
+            this.chatService.markAsReadLocally(+convId, ts);
+          }
+
+          // 📨 2. Charge les conversations après avoir récupéré les statuts de lecture
+          this.loadConversations();
+        });
+
+        // 👥 3. Charge les contacts (amis)
         this.loadContacts();
 
-        // 🔔 Abonnement aux messages entrants
+        // 🔔 4. Abonnement aux nouveaux messages (WebSocket)
         this.chatService.onMessageReceived().subscribe((message: any) => {
           console.log('📥 Nouveau message WebSocket reçu :', message);
           const conv = this.conversations.find(c => c.id === message.conversationId);
-          console.log('conv :',  conv);
+          console.log('conv :', conv);
 
           if (conv) {
             conv.messages.push(message);
@@ -140,24 +195,29 @@ export class ChatComponent implements OnInit, AfterViewChecked {
             conv.lastMessage = message.content;
             this.bumpConversationToTop(conv);
 
-            console.log('📦 Conversation mise à jour :', conv);
-
-            // 🆕 Force la détection du changement pour Angular
+            // 🆕 Force la mise à jour Angular
             this.conversations = [...this.conversations];
 
-            if (this.selectedConv?.id === conv.id) {
+            if (this.selectedConv?.id !== conv.id) {
+              conv.unread = true;
+              this.chatService.notifyUnreadForConversation(conv.id);
+              this.hasUnreadMessages = this.conversations.some(c => c.unread);
+            } else {
+              conv.unread = false;
+              this.chatService.clearUnreadForConversation(conv.id);
+              this.chatService.markAsReadLocally(conv.id, message.timestamp); // ✅ MAJ côté local
+              this.chatService.markAsReadOnServer(conv.id, message.timestamp).subscribe();
+              this.hasUnreadMessages = this.conversations.some(c => c.unread);
               this.scrollToBottom();
               this.cdr.detectChanges();
             }
+          } else {
+            this.loadConversations(); // au cas où la conv n'est pas encore chargée
           }
-          else {
-              // Cas où la conversation n'est pas encore chargée (optionnel)
-              this.loadConversations();
-            }
         });
       },
       error: (err) => {
-        console.error('Erreur lors de la récupération de l\'utilisateur courant', err);
+        console.error('❌ Erreur lors de la récupération de l\'utilisateur courant', err);
       }
     });
   }
@@ -217,19 +277,45 @@ handleClickOutside(event: MouseEvent) {
 
 
   selectConversation(conv: any) {
+    conv.unread = false;
+    this.hasUnreadMessages = this.conversations.some(c => c.unread);
     this.selectedConv = conv;
 
+    // ✅ Supprime les notifications visuelles
+    this.chatService.clearUnreadForConversation(conv.id);
+    console.log("✅ Conversation lue :", conv.id);
+
+    const markAsReadEverywhere = (timestamp: string) => {
+      this.chatService.markAsReadLocally(conv.id, timestamp);
+      this.chatService.markAsReadOnServer(conv.id, timestamp).subscribe();
+    };
+
     if (!conv.messages || conv.messages.length === 0) {
+      // 🔄 Charge les messages si non présents
       this.chatService.getMessagesByConversation(conv.id).subscribe({
         next: (msgs) => {
           console.log("📩 Messages récupérés :", msgs);
           conv.messages = msgs;
+
+          if (msgs.length > 0) {
+            const lastMsg = msgs.at(-1);
+            if (lastMsg && this.getSenderId(lastMsg) !== this.currentUserId) {
+              markAsReadEverywhere(this.chatService.normalizeIso(lastMsg.timestamp));
+            }
+          }
+
           this.cdr.detectChanges();  // force l'update de la vue
         },
         error: (err) => {
           console.error("Erreur lors du chargement des messages", err);
         }
       });
+    } else {
+      // ✅ Messages déjà présents → on lit le dernier
+      const lastMsg = conv.messages.at(-1);
+      if (lastMsg && this.getSenderId(lastMsg) !== this.currentUserId) {
+       markAsReadEverywhere(this.chatService.normalizeIso(lastMsg.timestamp));
+      }
     }
   }
 
@@ -241,13 +327,17 @@ handleClickOutside(event: MouseEvent) {
           senderId: this.currentUserId,
           sender: { id: this.currentUserId },
           content: this.newMessage.trim(),
-          timestamp: new Date().toISOString()
+          timestamp: this.chatService.normalizeIso(new Date().toISOString())
         };
 
         this.selectedConv.messages.push(newMsg);
         this.updateLastMessageTimestamp(this.selectedConv, newMsg.timestamp);  
         this.selectedConv.lastMessage = newMsg.content;
         this.bumpConversationToTop(this.selectedConv);                         // 👈 après la mise à jour
+
+        // ✅ Marquer comme lu tout de suite
+        this.chatService.markAsReadLocally(this.selectedConv.id, newMsg.timestamp);
+        this.chatService.markAsReadOnServer(this.selectedConv.id, newMsg.timestamp).subscribe();
 
         console.log('✉️ Message envoyé - conv mise à jour :', this.selectedConv);
 
@@ -351,6 +441,16 @@ handleClickOutside(event: MouseEvent) {
     }
     return this.userColors[userId];
   }
+
+
+  formatTimestamp(ts: string) { 
+    return new Date(ts).toISOString(); // conserve .mmmZ
+  }
+
+  private getSenderId(msg: any): number | null {
+    return msg?.senderId ?? msg?.sender?.id ?? null;
+  }
+
 
 }
 

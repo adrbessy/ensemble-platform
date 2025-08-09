@@ -6,6 +6,7 @@ import { environment } from 'src/environments/environment';
 import { NotificationService } from './services/notification.service';
 import { AuthService } from './auth.service';
 import { UserService } from './services/user.service';
+import { ChatService } from './services/chat.service';
 
 @Component({
   selector: 'app-login',
@@ -18,7 +19,8 @@ export class LoginComponent {
 
   constructor(private http: HttpClient, private router: Router, private notificationService: NotificationService, 
     private authService: AuthService,
-  private userService: UserService) {}
+  private userService: UserService,
+private chatService: ChatService) {}
 
 login() {
   if (!this.email || !this.password) {
@@ -45,12 +47,27 @@ login() {
         // 👉 maintenant on recharge le user depuis le backend
         this.http.get<any>(`${environment.apiUrl}/users/me`).subscribe({
           next: (user) => {
-            // ✅ Met à jour le user dans le UserService
             this.authService.setLoggedIn(true); // Redondant mais safe
             this.notificationService.success("Connexion réussie");
-            // 🔁 ici, publie dans le UserService
-            this.authService.setLoggedIn(true);
-            this.userService.setUser(user); // <-- ajoute cette ligne (tu dois injecter `UserService`)
+
+            this.userService.setUser(user); // 🔁 met à jour le user global
+
+            // ✅ Ajout pour charger les messages après login
+            this.chatService.getConversations().subscribe(convs => {
+              const hasUnread = convs.some(conv => {
+                const lastMsg = conv.lastMessage;
+                return lastMsg?.senderId !== user.id;
+              });
+
+              if (hasUnread) {
+                convs.forEach(c => {
+                  if (c.lastMessage?.senderId !== user.id) {
+                    this.chatService.notifyUnreadForConversation(c.id);
+                  }
+                });
+              }
+            });
+
             this.router.navigate(['/events']);
           },
           error: () => {

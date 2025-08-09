@@ -26,5 +26,16 @@ public class Conversation {
     )
     private List<User> participants = new ArrayList<>();
 
+    @OneToMany(mappedBy = "conversation", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Message> messages = new ArrayList<>();
+
+    public Message getLastMessage() {
+        if (messages == null || messages.isEmpty()) return null;
+
+        return messages.stream()
+                .max((m1, m2) -> m1.getTimestamp().compareTo(m2.getTimestamp()))
+                .orElse(null);
+    }
+
 
 }

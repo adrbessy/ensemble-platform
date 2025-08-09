@@ -6,7 +6,7 @@
       <ul class="navbar-nav d-flex flex-row align-items-center gap-3 mb-0">
         
         <!-- Non connecté -->
-        <ng-container *ngIf="!isLoggedIn()">
+        <ng-container *ngIf="!isUserLoggedIn">
           <li class="nav-item" routerLinkActive="active">
             <a class="nav-link" routerLink="/login">Connexion</a>
           </li>
@@ -16,7 +16,7 @@
         </ng-container>
 
         <!-- Connecté -->
-        <ng-container *ngIf="isLoggedIn()">
+        <ng-container *ngIf="isUserLoggedIn">
           <li class="nav-item" routerLinkActive="active">
             <a class="nav-link" routerLink="/events">
                Activités
@@ -28,11 +28,20 @@
             </a>
           </li>
           <li class="nav-item" routerLinkActive="active">
-            <a class="nav-link position-relative" routerLink="/messagerie" title="Messagerie">
-              <i class="bi bi-chat-dots"></i>
+            <a class="nav-link" routerLink="/messagerie" title="Messagerie">
+              <div class="messaging-icon-wrapper">
+                <i class="bi bi-chat-dots fs-5"></i>
+              <span
+                *ngIf="chatService.badge$ | async"
+                class="notification-badge position-absolute top-0 start-100 translate-middle">
+              </span>
+              </div>
             </a>
           </li>
-
+        <!-- Debug rapide si tu veux garder -->
+        <li class="nav-item text-danger fw-bold">
+          Debug : {{ chatService.badge$ | async }}
+        </li>
           <!-- Avatar + nom -->
            
           <li class="nav-item d-flex align-items-center">

@@ -1,16 +1,18 @@
 package com.ensemble.dto;
 
 import com.ensemble.model.User;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.util.List;
 
-@Data
+@Data  @AllArgsConstructor
+@NoArgsConstructor
 public class ConversationDTO {
     private Long id;
-    private String type;
     private String name;
-    private List<User> participants;
+    private String type; // "PRIVATE" | "GROUP"
+    private List<UserSummaryDTO> participants;
     private MessageDTO lastMessage;
-    // Getters/setters
 }

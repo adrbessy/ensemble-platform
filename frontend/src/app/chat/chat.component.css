@@ -328,3 +328,11 @@
   color: #999;
 }
 
+.unread-badge {
+  width: 10px;
+  height: 10px;
+  background-color: #007bff; /* ou rouge si tu préfères */
+  border-radius: 50%;
+  display: inline-block;
+  margin-left: auto;
+}
