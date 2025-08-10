@@ -319,6 +319,46 @@ handleClickOutside(event: MouseEvent) {
     }
   }
 
+  /** Upsert + bump + tri + refresh */
+  private upsertAndBump(convId: number, lastMsg: any, convPatch?: Partial<any>) {
+    // 1) trouver ou créer la conversation
+    let idx = this.conversations.findIndex(c => c.id === convId);
+    if (idx === -1) {
+      const base = {
+        id: convId,
+        name: '',
+        type: 'PRIVATE',
+        photoFilename: null,
+        participants: [],
+        messages: [],
+        lastMessage: '',
+        lastMessageTimestamp: 0,
+        unread: false,
+        ...convPatch,                // permet d’injecter name/participants si tu les as
+      };
+      this.conversations.unshift(base);
+      idx = 0;
+    }
+
+    const conv = this.conversations[idx];
+
+    // 2) mettre à jour le dernier message
+    conv.messages = conv.messages ?? [];
+    if (lastMsg) conv.messages.push(lastMsg);
+
+    const iso = this.chatService.normalizeIso(lastMsg.timestamp);
+    conv.lastMessage = lastMsg.content ?? conv.lastMessage ?? '';
+    conv.lastMessageTimestamp = Date.parse(iso);
+
+    // 3) remonter et trier
+    this.conversations.splice(idx, 1);
+    this.conversations.unshift(conv);
+    this.conversations.sort((a, b) => (b.lastMessageTimestamp ?? 0) - (a.lastMessageTimestamp ?? 0));
+
+    // 4) forcer la détection (utile en change detection default)
+    this.conversations = [...this.conversations];
+  }
+
   sendMessage() {
     if (!this.newMessage.trim() || !this.selectedConv) return;
     this.chatService.sendMessageToConversation(this.selectedConv.id, this.newMessage.trim()).subscribe({
@@ -330,10 +370,7 @@ handleClickOutside(event: MouseEvent) {
           timestamp: this.chatService.normalizeIso(new Date().toISOString())
         };
 
-        this.selectedConv.messages.push(newMsg);
-        this.updateLastMessageTimestamp(this.selectedConv, newMsg.timestamp);  
-        this.selectedConv.lastMessage = newMsg.content;
-        this.bumpConversationToTop(this.selectedConv);                         // 👈 après la mise à jour
+        this.upsertAndBump(this.selectedConv.id, newMsg);
 
         // ✅ Marquer comme lu tout de suite
         this.chatService.markAsReadLocally(this.selectedConv.id, newMsg.timestamp);

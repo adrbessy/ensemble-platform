@@ -27,8 +27,9 @@ public class ChatController {
     }
 
     @PostMapping("/conversations/group")
-    public Conversation createGroupConversation(@RequestBody GroupConversationRequest request) {
-        return chatService.createGroupConversation(request);
+    public ConversationDTO createGroupConversation(@RequestBody GroupConversationRequest request,
+                                                   Principal principal) {
+        return chatService.createGroupConversationDTO(principal.getName(), request);
     }
 
     @GetMapping("/conversations")
@@ -49,8 +50,9 @@ public class ChatController {
     }
 
     @PostMapping("/conversations/private")
-    public Conversation getOrCreatePrivateConversation(@RequestBody Long otherUserId, Principal principal) {
-        return chatService.getOrCreatePrivateConversation(principal.getName(), otherUserId);
+    public ConversationDTO getOrCreatePrivateConversation(@RequestBody Long otherUserId,
+                                                          Principal principal) {
+        return chatService.getOrCreatePrivateConversationDTO(principal.getName(), otherUserId);
     }
 
 

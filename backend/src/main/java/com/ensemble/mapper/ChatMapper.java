@@ -3,12 +3,14 @@ package com.ensemble.mapper;
 
 import com.ensemble.dto.*;
 import com.ensemble.model.*;
+import org.springframework.stereotype.Component;
 
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Component
 public class ChatMapper {
 
     public static UserSummaryDTO toUserSummary(User u) {

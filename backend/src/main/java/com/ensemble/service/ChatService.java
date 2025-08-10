@@ -4,6 +4,7 @@ import com.ensemble.dto.ConversationDTO;
 import com.ensemble.dto.GroupConversationRequest;
 import com.ensemble.dto.MessageDTO;
 import com.ensemble.dto.UserSummaryDTO;
+import com.ensemble.mapper.ChatMapper;
 import com.ensemble.model.Conversation;
 import com.ensemble.model.Message;
 import com.ensemble.model.User;
@@ -11,6 +12,7 @@ import com.ensemble.repository.ConversationRepository;
 import com.ensemble.repository.MessageRepository;
 import com.ensemble.repository.UserRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -22,11 +24,14 @@ public class ChatService {
     private final ConversationRepository conversationRepo;
     private final UserRepository userRepo;
     private final MessageRepository messageRepo;
+    private final ChatMapper mapper;
 
-    public ChatService(ConversationRepository conversationRepo, UserRepository userRepo, MessageRepository messageRepo) {
+    public ChatService(ConversationRepository conversationRepo, UserRepository userRepo, MessageRepository messageRepo,
+                       ChatMapper mapper) {
         this.conversationRepo = conversationRepo;
         this.userRepo = userRepo;
         this.messageRepo = messageRepo;
+        this.mapper = mapper;
     }
 
     public Conversation createGroupConversation(GroupConversationRequest request) {
@@ -132,6 +137,21 @@ public class ChatService {
         }
 
         conversationRepo.save(conversation);
+    }
+
+    @Transactional
+    public ConversationDTO getOrCreatePrivateConversationDTO(String meEmail, Long otherUserId) {
+        Conversation conv = getOrCreatePrivateConversation(meEmail, otherUserId);
+        // ⚠️ s'assurer que participants/lastMessage sont initialisés ici si LAZY
+        conv.getParticipants().size(); // force init simple
+        return mapper.toConversationDTO(conv);
+    }
+
+    @Transactional
+    public ConversationDTO createGroupConversationDTO(String meEmail, GroupConversationRequest req) {
+        Conversation conv = createGroupConversation(req); // ta logique existante
+        conv.getParticipants().size();
+        return mapper.toConversationDTO(conv);
     }
 
 }
