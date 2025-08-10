@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 
 import java.util.List;
 
-@Data  @AllArgsConstructor
+@Data
 @NoArgsConstructor
 public class ConversationDTO {
     private Long id;
@@ -15,4 +15,6 @@ public class ConversationDTO {
     private String type; // "PRIVATE" | "GROUP"
     private List<UserSummaryDTO> participants;
     private MessageDTO lastMessage;
+    private Boolean canWrite;
+
 }

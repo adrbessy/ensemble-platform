@@ -44,9 +44,10 @@ public class ChatController {
     }
 
     @PostMapping("/conversations/{id}/add-members")
-    public ResponseEntity<?> addMembersToConversation(@PathVariable Long id, @RequestBody List<Long> userIds) {
-        chatService.addUsersToConversation(id, userIds);
-        return ResponseEntity.ok().build();
+    public ResponseEntity<ConversationDTO> addMembersToConversation(@PathVariable Long id,
+                                                                    @RequestBody List<Long> userIds) {
+        ConversationDTO updated = chatService.addUsersToConversationAndReturnDTO(id, userIds);
+        return ResponseEntity.ok(updated);
     }
 
     @PostMapping("/conversations/private")

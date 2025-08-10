@@ -22,10 +22,9 @@ export class UserService {
     return this.userSubject.getValue();
     }
 
-
-  deleteMyAccount() {
-    return this.http.delete('/api/users/me');
-  }
+    deleteMyAccount() {
+        return this.http.delete('/api/users/me');
+    }
 
     addFriendByCode(code: string) {
         return this.http.post('/api/users/add-friend', { friendCode: code });
@@ -74,6 +73,11 @@ export class UserService {
         return this.http.get<User>(`/api/users/me`);
     }
 
+    removeFriend(otherUserId: number) {
+        return this.http.delete<void>(`/api/users/contacts/${otherUserId}`, {
+            withCredentials: true
+        });
+    }
 
 
 }

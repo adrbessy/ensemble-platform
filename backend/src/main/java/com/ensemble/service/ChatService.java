@@ -11,9 +11,11 @@ import com.ensemble.model.User;
 import com.ensemble.repository.ConversationRepository;
 import com.ensemble.repository.MessageRepository;
 import com.ensemble.repository.UserRepository;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -54,34 +56,22 @@ public class ChatService {
     }
 
     public List<ConversationDTO> getMyConversations(String email) {
-        User user = userRepo.findByEmail(email).orElseThrow();
-        List<Conversation> conversations = conversationRepo.findByParticipantId(user.getId());
-        return conversations.stream().map(conv -> {
-            ConversationDTO dto = new ConversationDTO();
-            dto.setId(conv.getId());
-            dto.setType(conv.getType());
-            dto.setName(conv.getName());
+        User me = userRepo.findByEmail(email).orElseThrow();
+        List<Conversation> convs = conversationRepo.findByParticipantId(me.getId());
 
-            // 🔹 Conversion List<User> → List<UserSummaryDTO>
-            dto.setParticipants(
-                    conv.getParticipants()
-                            .stream()
-                            .map(usera -> new UserSummaryDTO(
-                                    usera.getId(),
-                                    usera.getFirstName(),
-                                    usera.getLastName(),
-                                    usera.getPhotoFilename()
-                            ))
-                            .collect(Collectors.toList())
-            );
+        return convs.stream().map(conv -> {
+            boolean canWrite = true;
 
-            messageRepo.findTopByConversationOrderByTimestampDesc(conv)
-                    .map(MessageDTO::fromMessage)
-                    .ifPresent(dto::setLastMessage);
+            if ("PRIVATE".equals(conv.getType())) {
+                User other = conv.getParticipants().stream()
+                        .filter(u -> !u.getId().equals(me.getId()))
+                        .findFirst().orElse(null);
+                canWrite = other != null && userRepo.hasContact(me.getId(), other.getId());
+            }
 
-            return dto;
+            Message last = messageRepo.findTopByConversationOrderByTimestampDesc(conv).orElse(null);
+            return mapper.toConversationDTO(conv, last, canWrite);
         }).collect(Collectors.toList());
-
     }
 
     public Conversation getOrCreatePrivateConversation(User user1, User user2) {
@@ -98,29 +88,41 @@ public class ChatService {
     }
 
     public Conversation getOrCreatePrivateConversation(String currentUsername, Long otherUserId) {
-        User user1 = userRepo.findByEmail(currentUsername)
+        User me = userRepo.findByEmail(currentUsername)
                 .orElseThrow(() -> new RuntimeException("Utilisateur courant introuvable"));
-        User user2 = userRepo.findById(otherUserId)
+        User other = userRepo.findById(otherUserId)
                 .orElseThrow(() -> new RuntimeException("Utilisateur cible introuvable"));
 
-        return getOrCreatePrivateConversation(user1, user2);
+        if (!userRepo.hasContact(me.getId(), other.getId())) {
+            throw new AccessDeniedException("Vous n'êtes plus amis.");
+        }
+        return getOrCreatePrivateConversation(me, other);
     }
 
     public void sendMessageToConversation(String senderEmail, Long conversationId, String content) {
         User sender = userRepo.findByEmail(senderEmail).orElseThrow();
-
         Conversation conv = conversationRepo.findById(conversationId).orElseThrow();
 
         if (!conv.getParticipants().contains(sender)) {
-            throw new RuntimeException("L'utilisateur n'appartient pas à cette conversation.");
+            throw new AccessDeniedException("Vous n'appartenez pas à cette conversation.");
+        }
+
+        if ("PRIVATE".equals(conv.getType())) {
+            User other = conv.getParticipants().stream()
+                    .filter(u -> !u.getId().equals(sender.getId()))
+                    .findFirst().orElse(null);
+
+            if (other == null || !userRepo.hasContact(sender.getId(), other.getId())) {
+                throw new AccessDeniedException("Conversation verrouillée : vous n'êtes plus amis.");
+            }
         }
 
         Message message = new Message();
         message.setSender(sender);
-        message.setRecipient(null); // si pas pertinent ici
+        message.setRecipient(null);
         message.setContent(content);
-        message.setTimestamp(LocalDateTime.now());
-        message.setConversation(conv); // important si Message a un champ conversation
+        message.setTimestamp(Instant.now()); // UTC vrai
+        message.setConversation(conv);
 
         messageRepo.save(message);
     }
@@ -153,5 +155,29 @@ public class ChatService {
         conv.getParticipants().size();
         return mapper.toConversationDTO(conv);
     }
+
+    @Transactional
+    public ConversationDTO addUsersToConversationAndReturnDTO(Long conversationId, List<Long> userIds) {
+        Conversation conversation = conversationRepo.findById(conversationId)
+                .orElseThrow(() -> new RuntimeException("Conversation introuvable"));
+
+        List<User> newUsers = userRepo.findAllById(userIds);
+        for (User u : newUsers) {
+            if (!conversation.getParticipants().contains(u)) {
+                conversation.getParticipants().add(u);
+            }
+        }
+        conversationRepo.save(conversation);
+
+        Conversation updated = conversationRepo.findByIdWithParticipantsAndMessages(conversationId)
+                .orElseThrow(() -> new RuntimeException("Conversation introuvable après ajout"));
+
+        Message last = messageRepo.findTopByConversationOrderByTimestampDesc(updated).orElse(null);
+
+        // canWrite: true pour groupe / privé inchangé (tu peux aussi calculer selon l'utilisateur courant)
+        boolean canWrite = !"PRIVATE".equals(updated.getType());
+        return mapper.toConversationDTO(updated, last, canWrite);
+    }
+
 
 }

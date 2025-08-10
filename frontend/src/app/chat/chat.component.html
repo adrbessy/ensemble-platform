@@ -160,53 +160,72 @@
     </div>
 
 
-<div class="input-area">
-  <input [(ngModel)]="newMessage" (keydown.enter)="sendMessage()" placeholder="Écrivez un message..." />
-  <button (click)="sendMessage()" class="btn btn-primary">Envoyer</button>
+    <div *ngIf="selectedConv?.canWrite !== false; else locked" class="input-area">
+      <input [(ngModel)]="newMessage" (keydown.enter)="sendMessage()" placeholder="Écrivez un message..." />
+      <button (click)="sendMessage()" class="btn btn-primary">Envoyer</button>
 
-<div class="emoji-wrapper">
-  <button #emojiButton (click)="showEmojiPicker = !showEmojiPicker">😊</button>
-  <div *ngIf="showEmojiPicker" #emojiPicker class="emoji-picker-container">
-    <emoji-mart 
-      set="apple" 
-      theme="light" 
-      (emojiSelect)="addEmoji($event)">
-    </emoji-mart>
-  </div>
-</div>
+      <div class="emoji-wrapper">
+        <button #emojiButton (click)="showEmojiPicker = !showEmojiPicker">😊</button>
+        <div *ngIf="showEmojiPicker" #emojiPicker class="emoji-picker-container">
+          <emoji-mart 
+            set="apple" 
+            theme="light" 
+            (emojiSelect)="addEmoji($event)">
+          </emoji-mart>
+        </div>
+      </div>
 
-</div>
+    </div>
+
+    <ng-template #locked>
+      <div class="alert alert-warning m-3">
+        Vous n'êtes plus amis avec cette personne. La conversation est en lecture seule.
+      </div>
+    </ng-template>
 
   </div>
 
 
 <!-- ✅ Modale "Ajouter des personnes" tout en bas -->
-<div class="modal-backdrop" *ngIf="showAddMembersModal" (click)="closeAddMembersModal()"></div>
-<div class="modal-panel" *ngIf="showAddMembersModal">
-  <div class="modal-header">
-    <h5>Ajouter des personnes</h5>
-    <button class="close-btn" (click)="closeAddMembersModal()">×</button>
-  </div>
-  <div class="modal-body">
-    <input type="text" [(ngModel)]="searchTerm" class="form-control mb-2" placeholder="Rechercher un ami...">
+<!-- Backdrop -->
+<div class="modal-backdrop pretty" *ngIf="showAddMembersModal" (click)="closeAddMembersModal()"></div>
 
-    <div *ngFor="let contact of filteredFriends()" class="form-check">
-      <input class="form-check-input"
-             type="checkbox"
-             [id]="'friend-' + contact.id"
-             [value]="contact.id"
-             [(ngModel)]="contact.selected"
-             [disabled]="isAlreadyInConversation(contact.id)">
-      <label class="form-check-label" [for]="'friend-' + contact.id">
-        {{ contact.firstName }} {{ contact.lastName }}
+<!-- Panel -->
+<div class="modal-panel pretty" *ngIf="showAddMembersModal" role="dialog" aria-modal="true" aria-labelledby="addPeopleTitle">
+  <div class="modal-header pretty">
+    <div class="title-wrap">
+      <i class="bi bi-person-plus"></i>
+      <h5 id="addPeopleTitle">Ajouter des personnes</h5>
+    </div>
+    <button class="icon-btn" (click)="closeAddMembersModal()" aria-label="Fermer">
+      <i class="bi bi-x-lg"></i>
+    </button>
+  </div>
+
+  <div class="modal-body pretty">
+    <div class="input-wrap">
+      <i class="bi bi-search"></i>
+      <input type="text" [(ngModel)]="searchTerm" placeholder="Rechercher un ami…" />
+    </div>
+
+    <div class="people-list">
+      <label class="person" *ngFor="let contact of filteredFriends()" [class.disabled]="isAlreadyInConversation(contact.id)">
+        <input type="checkbox"
+               [disabled]="isAlreadyInConversation(contact.id)"
+               [(ngModel)]="contact.selected"/>
+        <span class="check"></span>
+        <span class="name">{{ contact.firstName }} {{ contact.lastName }}</span>
+        <span class="hint" *ngIf="isAlreadyInConversation(contact.id)">déjà dans le groupe</span>
       </label>
     </div>
   </div>
-  <div class="modal-footer">
-    <button class="btn btn-secondary" (click)="closeAddMembersModal()">Annuler</button>
-    <button class="btn btn-primary" (click)="confirmAddMembers()">Ajouter</button>
+
+  <div class="modal-footer pretty">
+    <button class="btn ghost" (click)="closeAddMembersModal()">Annuler</button>
+    <button class="btn primary" (click)="confirmAddMembers()">Ajouter</button>
   </div>
 </div>
+
 
 
 </div>

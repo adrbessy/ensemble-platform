@@ -3,6 +3,7 @@ import { ActivatedRoute } from '@angular/router';
 import { User } from '../models/user.model';
 import { UserService } from '../services/user.service';
 import { ChatService } from '../services/chat.service';
+import { ConversationDTO } from '../models/chat.models';
 
 type SelectableUser = User & { selected?: boolean };
 
@@ -25,6 +26,12 @@ export class ChatComponent implements OnInit, AfterViewChecked {
   groupName: string = '';
 
   showCreateGroup = false;
+
+  conversations: any[] = [];
+  selectedConv: any = null;
+  newMessage = '';
+  currentUserId!: number;
+  hasUnreadMessages: boolean = false;
 
   onGroupCreated() {
     this.showCreateGroup = false;
@@ -105,7 +112,8 @@ export class ChatComponent implements OnInit, AfterViewChecked {
               lastMessageTimestamp: lastMsg
                 ? (this.chatService as any).toMillis(lastMsg.timestamp)   // ou une util publique
                 : 0,
-              unread: isUnread // 🔁 utile pour l'affichage direct
+              unread: isUnread, // 🔁 utile pour l'affichage direct
+              canWrite: conv.canWrite ?? (conv.type === 'GROUP' ? true : undefined)
             };
           });
 
@@ -156,13 +164,6 @@ export class ChatComponent implements OnInit, AfterViewChecked {
       } catch (err) {}
     }
   }
-
-  conversations: any[] = [];
-
-  selectedConv: any = null;
-  newMessage = '';
-  currentUserId!: number;
-  hasUnreadMessages: boolean = false;
 
 
   ngOnInit(): void {
@@ -279,7 +280,7 @@ handleClickOutside(event: MouseEvent) {
   selectConversation(conv: any) {
     conv.unread = false;
     this.hasUnreadMessages = this.conversations.some(c => c.unread);
-    this.selectedConv = conv;
+    this.selectedConv = { ...conv }; 
 
     // ✅ Supprime les notifications visuelles
     this.chatService.clearUnreadForConversation(conv.id);
@@ -360,7 +361,8 @@ handleClickOutside(event: MouseEvent) {
   }
 
   sendMessage() {
-    if (!this.newMessage.trim() || !this.selectedConv) return;
+    if (!this.selectedConv || this.selectedConv.canWrite === false) return;
+    if (!this.newMessage.trim()) return;
     this.chatService.sendMessageToConversation(this.selectedConv.id, this.newMessage.trim()).subscribe({
       next: () => {
         const newMsg = {
@@ -383,7 +385,16 @@ handleClickOutside(event: MouseEvent) {
         this.newMessage = '';
       },
       error: (err) => {
-        console.error("Erreur d'envoi", err);
+        if (err.status === 403) {
+          // 🔒 bascule en lecture seule
+          this.selectedConv = { ...this.selectedConv, canWrite: false };
+          this.conversations = this.conversations.map(c =>
+            c.id === this.selectedConv.id ? { ...c, canWrite: false } : c
+          );
+          alert("Vous n’êtes plus amis. La conversation est désormais en lecture seule.");
+        } else {
+          console.error("Erreur d'envoi", err);
+        }
       }
     });
   }
@@ -411,28 +422,32 @@ handleClickOutside(event: MouseEvent) {
 
   newMembers: number[] = [];
 
-  confirmAddMembers() {
-    if (!this.selectedConv) return;
+confirmAddMembers() {
+  if (!this.selectedConv) return;
 
-    const selectedIds = this.friends
-      .filter(f => f.selected && !this.isAlreadyInConversation(f.id))
-      .map(f => f.id);
+  const selectedIds = this.friends
+    .filter(f => f.selected && !this.isAlreadyInConversation(f.id))
+    .map(f => f.id);
 
-    if (selectedIds.length === 0) {
-      this.closeAddMembersModal();
-      return;
-    }
+  if (selectedIds.length === 0) {
+    this.closeAddMembersModal();
+    return;
+  }
 
-    this.chatService.addMembersToConversation(this.selectedConv.id, selectedIds).subscribe({
-      next: () => {
-        this.loadConversations();
+  this.chatService.addMembersToConversation(this.selectedConv.id, selectedIds)
+    .subscribe({
+      next: (updatedConv: ConversationDTO) => {
+        this.conversations = this.conversations.map(c =>
+          c.id === updatedConv.id ? updatedConv : c
+        );
+        this.selectedConv = updatedConv;
         this.closeAddMembersModal();
       },
-      error: (err) => {
-        console.error("Erreur lors de l'ajout de membres :", err);
-      }
+      error: err => console.error('Erreur ajout membres', err)
     });
-  }
+
+}
+
 
 
   isAlreadyInConversation(contactId: number): boolean {

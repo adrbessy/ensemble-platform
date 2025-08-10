@@ -20,4 +20,12 @@ public interface ConversationRepository extends JpaRepository<Conversation, Long
             "AND p1.id = :user1Id AND p2.id = :user2Id")
     Optional<Conversation> findPrivateConversationBetweenUsers(@Param("user1Id") Long user1Id, @Param("user2Id") Long user2Id);
 
+    @Query("""
+       select distinct c from Conversation c
+       left join fetch c.participants p
+       where c.id = :id
+    """)
+    Optional<Conversation> findByIdWithParticipantsAndMessages(@Param("id") Long id);
+
+
 }

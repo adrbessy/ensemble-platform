@@ -56,12 +56,12 @@ login() {
             this.chatService.getConversations().subscribe(convs => {
               const hasUnread = convs.some(conv => {
                 const lastMsg = conv.lastMessage;
-                return lastMsg?.senderId !== user.id;
+                return lastMsg?.sender.id !== user.id;
               });
 
               if (hasUnread) {
                 convs.forEach(c => {
-                  if (c.lastMessage?.senderId !== user.id) {
+                  if (c.lastMessage?.sender.id !== user.id) {
                     this.chatService.notifyUnreadForConversation(c.id);
                   }
                 });

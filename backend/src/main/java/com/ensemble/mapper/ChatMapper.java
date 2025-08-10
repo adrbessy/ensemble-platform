@@ -13,31 +13,64 @@ import java.util.stream.Collectors;
 @Component
 public class ChatMapper {
 
-    public static UserSummaryDTO toUserSummary(User u) {
+    public UserSummaryDTO toUserSummary(User u) {
         return new UserSummaryDTO(u.getId(), u.getFirstName(), u.getLastName(), u.getPhotoFilename());
     }
 
-    public static ConversationDTO toConversationDTO(Conversation c) {
-        List<UserSummaryDTO> parts = c.getParticipants()
-                .stream().map(ChatMapper::toUserSummary).collect(Collectors.toList());
-        return new ConversationDTO(c.getId(), c.getName(), c.getType(), parts, null);
+    public ConversationDTO toConversationDTO(Conversation c) {
+        return toConversationDTO(c, null);
     }
 
-    public static MessageDTO toMessageDTO(Message m) {
-        // If your LocalDateTime is stored as UTC in DB, convert with UTC:
-        Instant ts = m.getTimestamp()
-                .atOffset(ZoneOffset.UTC)  // LocalDateTime -> OffsetDateTime (UTC)
-                .toInstant();
-
+    public MessageDTO toMessageDTO(Message m) {
         return new MessageDTO(
                 m.getId(),
                 m.getContent(),
-                ts,
+                m.getTimestamp(),            // déjà un Instant UTC
                 toUserSummary(m.getSender())
         );
     }
 
-    public static List<MessageDTO> toMessageDTOs(List<Message> msgs) {
-        return msgs.stream().map(ChatMapper::toMessageDTO).collect(Collectors.toList());
+    public List<MessageDTO> toMessageDTOs(List<Message> msgs) {
+        return msgs.stream().map(this::toMessageDTO).collect(Collectors.toList());
     }
+
+    public ConversationDTO toConversationDTO(Conversation c, Message lastMsg) {
+        List<UserSummaryDTO> parts = c.getParticipants().stream()
+                .map(this::toUserSummary).toList();
+
+        ConversationDTO dto = new ConversationDTO();
+        dto.setId(c.getId());
+        dto.setName(c.getName());
+        dto.setType(c.getType());
+        dto.setParticipants(parts);
+        dto.setCanWrite(null);
+        if (lastMsg != null) {
+            dto.setLastMessage(toMessageDTO(lastMsg));
+        }
+        return dto;
+    }
+
+    // ChatMapper.java
+    public ConversationDTO toConversationDTO(Conversation c, Message last, boolean canWrite) {
+        List<UserSummaryDTO> parts = c.getParticipants()
+                .stream().map(this::toUserSummary).collect(Collectors.toList());
+
+        ConversationDTO dto = new ConversationDTO();
+        dto.setId(c.getId());
+        dto.setName(c.getName());
+        dto.setType(c.getType());
+        dto.setParticipants(parts);
+        if (last != null) {
+            dto.setLastMessage(toMessageDTO(last));
+        }
+        // ajoute la propriété si elle n’existe pas encore dans ton DTO
+        // (sinon ajoute-la : private Boolean canWrite;)
+        try { // si tu as déjà le champ
+            var f = ConversationDTO.class.getDeclaredField("canWrite");
+            f.setAccessible(true);
+            f.set(dto, canWrite);
+        } catch (Exception ignore) {}
+        return dto;
+    }
+
 }

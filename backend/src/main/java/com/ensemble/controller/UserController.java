@@ -262,4 +262,24 @@ public class UserController {
         return ResponseEntity.ok(user); // ← 🟢 Doit renvoyer user avec photoFilename
     }
 
+    @DeleteMapping("/contacts/{otherUserId}")
+    public ResponseEntity<?> removeFriend(@PathVariable Long otherUserId) {
+        User me = authService.getCurrentUser();
+        User other = userRepo.findById(otherUserId)
+                .orElseThrow(() -> new RuntimeException("Utilisateur introuvable"));
+
+        // retire la relation dans les deux sens
+        me.getContacts().remove(other);
+        other.getContacts().remove(me);
+
+        userRepo.save(me);
+        userRepo.save(other);
+
+        // (optionnel) nettoyer les FriendRequest associées
+        // friendRequestRepo.deleteBetween(me, other);  // voir plus bas
+
+        return ResponseEntity.noContent().build(); // 204
+    }
+
+
 }

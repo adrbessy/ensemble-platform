@@ -3,6 +3,7 @@ package com.ensemble.model;
 import jakarta.persistence.*;
 import lombok.Data;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 
 @Entity
@@ -20,7 +21,8 @@ public class Message {
 
     private String content;
 
-    private LocalDateTime timestamp = LocalDateTime.now();
+    @Column(nullable = false)
+    private Instant timestamp;
 
     @ManyToOne
     @JoinColumn(name = "conversation_id")

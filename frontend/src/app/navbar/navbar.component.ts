@@ -5,7 +5,8 @@ import { environment } from 'src/environments/environment';
 import { UserService } from '../services/user.service';
 import { User } from '../models/user.model';
 import { ChatService } from '../services/chat.service';
-import { combineLatest } from 'rxjs'; // 👈
+import { combineLatest, tap } from 'rxjs'; // 👈
+import { dbg } from '../debug';
 
 @Component({
   selector: 'app-navbar',
@@ -27,31 +28,32 @@ export class NavbarComponent {
   private lastInitUserId?: number;
 
   ngOnInit(): void {
-    // 1) Badge prêt à l’emploi (mémoïsé dans le service)
-    this.chatService.badge$.subscribe(v => this.hasUnreadMessages = v);
+    this.chatService.badge$
+      .pipe(tap(v => dbg(`NAV:badge$ -> ${v}`)))
+      .subscribe(v => this.hasUnreadMessages = v);
 
-    // 2) Réagit aux changements d’utilisateur
-    this.userService.user$.subscribe(async user => {
-      this.user = user;
-      this.isUserLoggedIn = !!user;
+    this.userService.user$
+      .pipe(tap(u => dbg(`NAV:user$ ->`, u ? {id: u.id, email: u.email} : null)))
+      .subscribe(async user => {
+        this.user = user;
+        this.isUserLoggedIn = !!user;
 
-      if (!user) {
-        this.chatService.resetAllStates();   // nettoie tout à la déconnexion
-        this.lastInitUserId = undefined;
-        return;
-      }
+        if (!user) {
+          dbg('NAV:logout detected -> resetAllStates');
+          this.chatService.resetAllStates();
+          this.lastInitUserId = undefined;
+          return;
+        }
 
-      // Init du chat une seule fois par utilisateur
-      if (this.lastInitUserId !== user.id) {
-        await this.chatService.initForUser(user.id);
-        this.lastInitUserId = user.id;
-      }
+        if (this.lastInitUserId !== user.id) {
+          dbg(`NAV:initForUser(${user.id})`);
+          await this.chatService.initForUser(user.id);
+          this.lastInitUserId = user.id;
+        }
 
-      // rafraîchit l’avatar si besoin
-      this.timestamp = Date.now();
-    });
+        this.timestamp = Date.now();
+      });
 
-    // 3) Toujours tenter de charger le profil (pas besoin de tester isLoggedIn)
     this.userService.getMyProfile().subscribe({
       next: (user) => this.userService.setUser(user),
       error: () => this.userService.setUser(null)
@@ -60,7 +62,14 @@ export class NavbarComponent {
 
   @HostListener('window:focus')
   async onFocus() {
-    if (this.isUserLoggedIn) {
+    dbg('NAV:window focus');
+    if (this.isUserLoggedIn) await this.chatService.refreshUnreadFromServer();
+  }
+
+  @HostListener('document:visibilitychange')
+  async onVisibility() {
+    dbg(`NAV:visibility ${document.visibilityState}`);
+    if (document.visibilityState === 'visible' && this.isUserLoggedIn) {
       await this.chatService.refreshUnreadFromServer();
     }
   }
@@ -70,6 +79,7 @@ export class NavbarComponent {
   }
 
   logout(): void {
+    dbg('NAV:logout clicked');
     this.chatService.resetAllStates();
     this.hasUnreadMessages = false;
     this.authService.logout();

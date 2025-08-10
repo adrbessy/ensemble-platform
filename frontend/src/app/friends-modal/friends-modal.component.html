@@ -4,14 +4,29 @@
 </div>
 
 <div class="modal-body">
-  <div *ngIf="contacts.length > 0" class="d-flex flex-wrap gap-3">
-    <div *ngFor="let contact of contacts" class="d-flex align-items-center gap-2">
-      <img [src]="'http://localhost:8080/uploads/photos/' + contact.photoFilename"
-           class="rounded-circle" width="40" height="40"
-           onerror="this.src='assets/default-avatar.png'" />
-      <span>{{ contact.firstName }} {{ contact.lastName }}</span>
+  <div *ngIf="contacts.length > 0" class="d-flex flex-column gap-2">
+    <div *ngFor="let contact of contacts" class="d-flex align-items-center justify-content-between">
+      <div class="d-flex align-items-center gap-2">
+        <img [src]="'http://localhost:8080/uploads/photos/' + contact.photoFilename"
+             class="rounded-circle" width="40" height="40"
+             onerror="this.src='assets/default-avatar.png'" />
+        <span>{{ contact.firstName }} {{ contact.lastName }}</span>
+      </div>
+
+      <!-- Menu 3 points -->
+      <div ngbDropdown>
+        <button ngbDropdownToggle class="btn btn-link p-0" style="color: inherit;">
+          <i class="bi bi-three-dots-vertical"></i>
+        </button>
+        <div ngbDropdownMenu>
+          <button class="dropdown-item text-danger" (click)="removeFriend(contact)">
+            Retirer des ami(e)s
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 
   <div *ngIf="contacts.length === 0" class="text-muted text-center">Aucun contact pour le moment.</div>
 </div>
+

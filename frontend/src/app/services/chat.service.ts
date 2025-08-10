@@ -1,6 +1,8 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { BehaviorSubject, Observable, Subject, firstValueFrom, combineLatest, map, distinctUntilChanged, shareReplay  } from 'rxjs';
+import { ConversationDTO } from '../models/chat.models';
+import { dbg } from '../debug';
 
 export interface Message {
   id: number;
@@ -19,6 +21,11 @@ export class ChatService {
   readiness$ = new BehaviorSubject<boolean>(false);
   private unreadMessagesSubject = new BehaviorSubject<Set<number>>(new Set());
   unreadConversations$ = this.unreadMessagesSubject.asObservable();
+
+  private initToken = 0;
+  private inFlightInit?: Promise<void>;
+
+  private storageKey(userId: number) { return `chat:read:${userId}`; }
 
   // 👇 observable déjà prêt à consommer dans la navbar
   badge$: Observable<boolean> = combineLatest([this.readiness$, this.unreadConversations$]).pipe(
@@ -50,10 +57,8 @@ export class ChatService {
     });
   }
 
-  getConversations(): Observable<any[]> {
-    return this.http.get<any[]>('/api/chat/conversations', {
-      withCredentials: true
-    });
+  getConversations(): Observable<ConversationDTO[]> {
+    return this.http.get<ConversationDTO[]>('/api/chat/conversations', { withCredentials: true });
   }
 
   sendMessageToConversation(conversationId: number, content: string): Observable<any> {
@@ -62,16 +67,16 @@ export class ChatService {
     });
   }
 
-  getMessagesByConversation(conversationId: number): Observable<Message[]> {
-    return this.http.get<Message[]>(`/api/messages/conversation/${conversationId}`, {
-      withCredentials: true
-    });
+  getMessagesByConversation(conversationId: number) {
+    return this.http.get<Message[]>(`/api/messages/conversation/${conversationId}`, { withCredentials: true });
   }
 
   addMembersToConversation(conversationId: number, userIds: number[]) {
-    return this.http.post(`/api/chat/conversations/${conversationId}/add-members`, userIds, {
-      withCredentials: true
-    });
+    return this.http.post<ConversationDTO>( // ✅ typé
+      `/api/chat/conversations/${conversationId}/add-members`,
+      userIds,
+      { withCredentials: true }
+    );
   }
 
   getOrCreatePrivateConversation(otherUserId: number) {
@@ -102,12 +107,14 @@ export class ChatService {
   notifyUnreadForConversation(convId: number) {
     this.unreadConversationIds.add(convId);
     this.unreadMessagesSubject.next(new Set(this.unreadConversationIds));
+    dbg(`CHAT:notifyUnread conv=${convId} size=${this.unreadConversationIds.size}`);
   }
 
   clearUnreadForConversation(convId: number) {
     this.unreadConversationIds.delete(convId);
     console.log('✅ Lecture conversation', convId);
     this.unreadMessagesSubject.next(new Set(this.unreadConversationIds));
+    dbg(`CHAT:clearUnread conv=${convId} size=${this.unreadConversationIds.size}`);
   }
 
   getUnreadConversations$(): Observable<Set<number>> {
@@ -121,18 +128,26 @@ export class ChatService {
     this.currentUserId = id;
   }
 
-  private localReadMap = new Map<number, string>(); // conversationId → ISO timestamp
+ private localReadMap = new Map<number, number>(); // convId -> readMs
 
-  markAsReadLocally(convId: number, timestamp: string) {
-    // on stocke au format normalisé
-    this.localReadMap.set(convId, this.normalizeIso(timestamp));
+  // --- API lecture/écriture du cache --- //
+  markAsReadLocally(convId: number, timestampIso: string) {
+    const ms = this.toMillis(timestampIso);
+    console.log(`[READ] mark local conv=${convId} tsIso=${timestampIso} ms=${ms}`);
+    this.localReadMap.set(convId, ms);
     this.clearUnreadForConversation(convId);
+    if (this.currentUserId) this.saveLocalReadMap(this.currentUserId);
   }
 
-  wasReadLocally(convId: number, lastMessageTime: string): boolean {
-    const lastRead = this.localReadMap.get(convId);
-    if (!lastRead) return false;
-    return this.toMillis(lastMessageTime) <= this.toMillis(lastRead);
+  wasReadLocally(convId: number, lastMessageIso: string): boolean {
+    const readMs = this.localReadMap.get(convId);
+    if (!readMs) return false;
+    const lastMs = this.toMillis(lastMessageIso);
+    // <= : déjà lu si j’ai un read >= au dernier message
+    const result = lastMs <= readMs;
+    // dbg facultatif :
+    // dbg(`wasReadLocally conv=${convId} last=${lastMs} read=${readMs} => ${result}`);
+    return result;
   }
 
   markAsReadOnServer(conversationId: number, timestamp: string): Observable<any> {
@@ -153,17 +168,11 @@ export class ChatService {
   }
 
     // ---- UTIL ----
-  private toMillis(ts: string | undefined | null): number {
-    if (!ts) return 0;
-    // force YYYY-MM-DDTHH:mm:ss.SSSZ (3 décimales)
-    const m = ts.match(/^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})(\.\d+)?Z$/);
-    if (m) {
-      const base = m[1];
-      const frac = (m[2]?.slice(1) ?? '000').slice(0, 3).padEnd(3, '0');
-      ts = `${base}.${frac}Z`;
-    }
-    return Date.parse(ts);
-  }
+private toMillis(ts: string | undefined | null): number {
+  if (!ts) return 0;
+  // Date.parse gère l’ISO correctement (y compris .SSS et Z)
+  return Date.parse(ts);
+}
 
   // expose une aide si tu veux l’utiliser côté composant
   normalizeIso(ts: string): string {
@@ -178,45 +187,158 @@ export class ChatService {
     this.unreadConversationIds.clear();
     this.unreadMessagesSubject.next(new Set());
     this.localReadMap.clear();
-    this.currentUserId = undefined as any; // ou 0 / null selon ton typage
+    if (this.currentUserId) localStorage.removeItem(this.storageKey(this.currentUserId));
+    this.currentUserId = undefined as any;
     this.readiness$.next(false);
   }
 
+  // 2) initForUser : on remplit le cache en ms (pas de normalizeIso ici)
   async initForUser(userId: number) {
-    this.resetAllStates();
+    if (this.inFlightInit) return this.inFlightInit;
+    const myToken = ++this.initToken;
+
+    this.readiness$.next(false);
+    this.unreadConversationIds.clear();
+    this.unreadMessagesSubject.next(new Set());
+    this.localReadMap.clear();
     this.setCurrentUserId(userId);
-    const statusMap = await firstValueFrom(this.getAllReadStatuses());
-    for (const [convId, ts] of Object.entries(statusMap)) {
-      this.markAsReadLocally(+convId, ts);
-    }
-    // 2) construire le set des non-lus à partir des conversations
-    await this.refreshUnreadFromServer();
-    this.unreadMessagesSubject.next(new Set(this.unreadConversationIds));
-    this.readiness$.next(true);
+
+    this.inFlightInit = (async () => {
+      try {
+        // 1) serveur
+        const serverMap = await firstValueFrom(this.getAllReadStatuses()); // { [convId]: iso }
+        for (const [convId, tsIso] of Object.entries(serverMap)) {
+          this.localReadMap.set(+convId, this.toMillis(tsIso));
+        }
+        // après avoir rempli localReadMap avec serverMap :
+        console.log('[INIT] server read-status =>',
+          Object.fromEntries(
+            Object.entries(serverMap).map(([id, iso]) => [id, Date.parse(iso)])
+          )
+        );
+
+        // juste après la fusion avec le localStorage :
+        console.log('[INIT] localStorage read-status =>',
+          Object.fromEntries(this.loadLocalReadMap(userId))
+        );
+        console.log('[INIT] merged readMap (ms) =>',
+          Object.fromEntries(this.localReadMap)
+        );
+
+        // 2) local → fusion (on garde le plus récent)
+        const local = this.loadLocalReadMap(userId);
+        for (const [id, localMs] of local.entries()) {
+          const serverMs = this.localReadMap.get(id) ?? 0;
+          if (localMs > serverMs) this.localReadMap.set(id, localMs);
+        }
+
+        // 3) recalcul du badge
+        if (myToken !== this.initToken) return;
+        
+        await this.refreshUnreadFromServerInternal('init');
+      } finally {
+        if (myToken === this.initToken) this.readiness$.next(true);
+        this.inFlightInit = undefined;
+        // (optionnel) persister la fusion
+        this.saveLocalReadMap(userId);
+      }
+    })();
+
+    return this.inFlightInit;
   }
 
   /** Recalcule le badge “non-lus” sans ouvrir la Messagerie */
-async refreshUnreadFromServer(): Promise<void> {
-  const convos = await firstValueFrom(this.getConversations());
-  const nextSet = new Set<number>();
-
-  for (const conv of convos) {
-    const last = conv.lastMessage; // ConversationDTO.lastMessage
-    if (!last) continue;
-
-    const ts = this.normalizeIso(last.timestamp);
-    const senderId = last.sender?.id ?? last.senderId;
-
-    // non-lu = message du correspondant ET ts > lastRead
-    const alreadyRead = this.wasReadLocally(conv.id, ts);
-    if (senderId !== this.currentUserId && !alreadyRead) {
-      nextSet.add(conv.id);
-    }
+  async refreshUnreadFromServer(): Promise<void> {
+    await this.whenReady();
+    return this.refreshUnreadFromServerInternal('manual');
   }
 
-  this.unreadConversationIds = nextSet;
-  this.unreadMessagesSubject.next(new Set(nextSet));
-}
+  // 3) refreshUnreadFromServerInternal : on ne normalise plus, on compare en ms
+  private async refreshUnreadFromServerInternal(mark: number | string): Promise<void> {
+    const convos = await firstValueFrom(this.getConversations());
+    const nextSet = new Set<number>();
 
+    for (const conv of convos) {
+      const last = conv.lastMessage;
+      if (!last) continue;
+
+      const senderId = last.sender?.id ?? null;
+      const alreadyRead = this.wasReadLocally(conv.id, last.timestamp);
+
+      // 👇 sanity logs
+      const lastMs = this.toMillis(last.timestamp);
+      const readMs = this.localReadMap.get(conv.id) ?? 0;
+      console.log(
+        `COMPARE conv=${conv.id} sender=${senderId} me=${this.currentUserId} lastMs=${lastMs} readMs=${readMs} => alreadyRead=${alreadyRead}`
+      );
+      console.table(convos.map(c => ({
+        id: c.id,
+        type: c.type,
+        lastSender: c.lastMessage?.sender?.id ?? null,
+        lastTs: c.lastMessage?.timestamp ?? null
+      })));
+
+      if (senderId !== this.currentUserId && !alreadyRead) {
+        nextSet.add(conv.id);
+      }
+    }
+
+    this.unreadConversationIds = nextSet;
+    this.unreadMessagesSubject.next(new Set(nextSet));
+  }
+
+
+  isReady(): boolean {
+    return this.readiness$.value === true;
+  }
+
+  whenReady(): Promise<void> {
+    if (this.isReady()) return Promise.resolve();
+    // petite promesse qui se résout quand readiness$ passe à true
+    return new Promise(res => {
+      const sub = this.readiness$.subscribe(v => {
+        if (v) { sub.unsubscribe(); res(); }
+      });
+    });
+  }
+
+  private loadLocalReadMap(userId: number): Map<number, number> {
+    try {
+      const raw = localStorage.getItem(this.storageKey(userId));
+      if (!raw) return new Map();
+      const obj = JSON.parse(raw) as Record<string, number>;
+      return new Map(Object.entries(obj).map(([k,v]) => [Number(k), Number(v)]));
+    } catch { return new Map(); }
+  }
+
+  private saveLocalReadMap(userId: number) {
+    try {
+      const obj: Record<number, number> = {};
+      for (const [id, ms] of this.localReadMap.entries()) obj[id] = ms;
+      localStorage.setItem(this.storageKey(userId), JSON.stringify(obj));
+    } catch {}
+  }
+
+  private async baselineReadFromConversations(): Promise<void> {
+    const convos = await firstValueFrom(this.getConversations());
+    for (const conv of convos) {
+      const last = conv.lastMessage;
+      if (!last) continue;
+
+      const convId = conv.id;
+      const lastMs = this.toMillis(last.timestamp);
+      const currentRead = this.localReadMap.get(convId) ?? 0;
+
+      // Baseline uniquement si on n'a RIEN (ou très ancien) et si le dernier message
+      // ne vient PAS de moi (sinon il est "lu" par définition).
+      if ((currentRead === 0 || currentRead < lastMs) &&
+          last.sender?.id !== this.currentUserId) {
+        // ⚠️ à toi de choisir la politique : stricte (= seulement si 0) ou souple (= si < lastMs)
+        // Pour éliminer les faux positifs au reboot, on prend la souple:
+        this.localReadMap.set(convId, lastMs);
+      }
+    }
+    if (this.currentUserId) this.saveLocalReadMap(this.currentUserId);
+  }
 
 }
