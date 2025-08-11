@@ -21,4 +21,5 @@ export interface ConversationDTO {
   participants: UserSummaryDTO[];
   lastMessage?: MessageLiteDTO | null;
   canWrite?: boolean; 
+  eventId?: number; 
 }

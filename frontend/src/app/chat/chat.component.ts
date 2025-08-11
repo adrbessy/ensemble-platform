@@ -1,5 +1,5 @@
 import { Component, OnInit, AfterViewChecked, ViewChild, ElementRef, ChangeDetectorRef, HostListener } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { User } from '../models/user.model';
 import { UserService } from '../services/user.service';
 import { ChatService } from '../services/chat.service';
@@ -33,10 +33,21 @@ export class ChatComponent implements OnInit, AfterViewChecked {
   currentUserId!: number;
   hasUnreadMessages: boolean = false;
 
-  onGroupCreated() {
+
+  onGroupCreated(newConv: ConversationDTO) {
     this.showCreateGroup = false;
-    this.loadConversations(); 
+
+    // Normalise et insère (au cas où la liste ne serait pas encore rechargée)
+    const conv = this.normalizeConv({ ...newConv, messages: [] });
+
+    const idx = this.conversations.findIndex(c => c.id === conv.id);
+    if (idx !== -1) this.conversations[idx] = conv;
+    else this.conversations.unshift(conv);
+
+    this.conversations = [...this.conversations]; // trigger change detection
+    this.selectConversation(conv);                 // ✅ ouvre directement
   }
+
 
   updateLastMessageTimestamp(conv: any, timestamp: string) {
     conv.lastMessageTimestamp = this.chatService['toMillis']
@@ -50,6 +61,7 @@ export class ChatComponent implements OnInit, AfterViewChecked {
       console.warn("⏳ currentUserId pas encore défini, report du chargement des conversations.");
       return;
     }
+
     this.chatService.getConversations().subscribe({
       next: (convos) => {
         // 🧹 on repart de zéro pour les pastilles
@@ -99,6 +111,7 @@ export class ChatComponent implements OnInit, AfterViewChecked {
 
             return {
               id: conv.id,
+              eventId: conv.eventId, 
               name: conv.type === 'GROUP'
                 ? conv.name
                 : this.getOtherParticipantName(conv.participants),
@@ -130,6 +143,15 @@ export class ChatComponent implements OnInit, AfterViewChecked {
             return (b.lastMessageTimestamp ?? 0) - (a.lastMessageTimestamp ?? 0);
           });
 
+          // ✅ Sélectionner la conversation demandée via ?conv=...
+          if (this.pendingSelectConvId) {
+            const target = this.conversations.find(c => c.id === this.pendingSelectConvId);
+            if (target) {
+              this.selectConversation(target);
+            }
+            this.pendingSelectConvId = undefined;
+          }
+
         });
       },
       error: (err) => {
@@ -149,9 +171,15 @@ export class ChatComponent implements OnInit, AfterViewChecked {
   }
 
 
-  constructor(private chatService: ChatService, private userService: UserService,
-    private cdr: ChangeDetectorRef 
+  constructor(
+    private chatService: ChatService, 
+    private userService: UserService,
+    private cdr: ChangeDetectorRef,
+    private route: ActivatedRoute,
+    private router: Router
   ) {}
+
+  private pendingSelectConvId?: number;
 
   ngAfterViewChecked() {
     this.scrollToBottom();
@@ -167,6 +195,12 @@ export class ChatComponent implements OnInit, AfterViewChecked {
 
 
   ngOnInit(): void {
+    // lire l’ID éventuel de conversation demandée
+    this.route.queryParamMap.subscribe(params => {
+      const id = params.get('conv');
+      this.pendingSelectConvId = id ? +id : undefined;
+    });
+
     this.userService.getCurrentUser().subscribe({
       next: (user) => {
         this.currentUserId = user.id;
@@ -278,46 +312,41 @@ handleClickOutside(event: MouseEvent) {
 
 
   selectConversation(conv: any) {
+    // ⚓️ on sélectionne l'instance de la liste si elle existe
+    const fromList = this.conversations.find(c => c.id === conv.id);
+    conv = this.normalizeConv(fromList ?? conv);
+
     conv.unread = false;
     this.hasUnreadMessages = this.conversations.some(c => c.unread);
-    this.selectedConv = { ...conv }; 
+    this.selectedConv = { ...conv };
 
-    // ✅ Supprime les notifications visuelles
     this.chatService.clearUnreadForConversation(conv.id);
-    console.log("✅ Conversation lue :", conv.id);
 
     const markAsReadEverywhere = (timestamp: string) => {
       this.chatService.markAsReadLocally(conv.id, timestamp);
       this.chatService.markAsReadOnServer(conv.id, timestamp).subscribe();
     };
 
-    if (!conv.messages || conv.messages.length === 0) {
-      // 🔄 Charge les messages si non présents
-      this.chatService.getMessagesByConversation(conv.id).subscribe({
-        next: (msgs) => {
-          console.log("📩 Messages récupérés :", msgs);
-          conv.messages = msgs;
-
-          if (msgs.length > 0) {
-            const lastMsg = msgs.at(-1);
-            if (lastMsg && this.getSenderId(lastMsg) !== this.currentUserId) {
-              markAsReadEverywhere(this.chatService.normalizeIso(lastMsg.timestamp));
-            }
-          }
-
-          this.cdr.detectChanges();  // force l'update de la vue
-        },
-        error: (err) => {
-          console.error("Erreur lors du chargement des messages", err);
+    if (!conv.messages?.length) {
+      this.chatService.getMessagesByConversation(conv.id).subscribe(msgs => {
+        conv.messages = msgs ?? [];
+        const last = conv.messages.at(-1);
+        if (last && (last.sender?.id ?? last.senderId) !== this.currentUserId) {
+          markAsReadEverywhere(this.chatService.normalizeIso(last.timestamp));
         }
+        this.selectedConv = { ...conv }; // force MAJ
+        this.cdr.detectChanges();
       });
     } else {
-      // ✅ Messages déjà présents → on lit le dernier
-      const lastMsg = conv.messages.at(-1);
-      if (lastMsg && this.getSenderId(lastMsg) !== this.currentUserId) {
-       markAsReadEverywhere(this.chatService.normalizeIso(lastMsg.timestamp));
+      const last = conv.messages.at(-1);
+      if (last && (last.sender?.id ?? last.senderId) !== this.currentUserId) {
+        markAsReadEverywhere(this.chatService.normalizeIso(last.timestamp));
       }
     }
+
+    // bonus UX : refermer le panneau "Nouvelle discussion"
+    this.showPrivateConvForm = false;
+    this.searchTerm = '';
   }
 
   /** Upsert + bump + tri + refresh */
@@ -502,6 +531,23 @@ confirmAddMembers() {
   private getSenderId(msg: any): number | null {
     return msg?.senderId ?? msg?.sender?.id ?? null;
   }
+
+  goToEventDetail(eventId: number) {
+    this.router.navigate(['/activite/', eventId]);
+  }
+
+  private normalizeConv(c: any): any {
+    // messages toujours défini
+    c.messages = c.messages ?? [];
+
+    // pour une PRIVATE, calcule le nom / avatar si absents
+    if (c.type === 'PRIVATE') {
+      c.name = c.name ?? this.getOtherParticipantName(c.participants);
+      c.photoFilename = c.photoFilename ?? this.getOtherParticipantPhoto(c.participants);
+    }
+    return c;
+  }
+
 
 
 }

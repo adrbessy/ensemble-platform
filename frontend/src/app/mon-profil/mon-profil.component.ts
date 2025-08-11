@@ -217,8 +217,18 @@ export class MonProfilComponent {
   }
 
   openFriendsModal() {
-    const modalRef = this.modalService.open(FriendsModalComponent, { size: 'md' });
-    modalRef.componentInstance.contacts = this.user.contacts;
+    const ref = this.modalService.open(FriendsModalComponent, { size: 'md' });
+
+    // ⚠️ charger les contacts complets (avec birthdate)
+    this.userService.getContacts().subscribe(contacts => {
+      ref.componentInstance.contacts = contacts;
+
+      // garder ta mise à jour immédiate du profil quand on supprime
+      ref.componentInstance.removed.subscribe((removedId: number) => {
+        this.user.contacts = this.user.contacts.filter(c => c.id !== removedId);
+        this.userService.setUser({ ...this.user });
+      });
+    });
   }
 
 

@@ -27,5 +27,14 @@ public interface ConversationRepository extends JpaRepository<Conversation, Long
     """)
     Optional<Conversation> findByIdWithParticipantsAndMessages(@Param("id") Long id);
 
+    Optional<Conversation> findByEventId(Long eventId);
+
+    @Query("""
+     select c from Conversation c
+     left join fetch c.participants
+     where c.eventId = :eventId
+    """)
+    Optional<Conversation> findByEventIdWithParticipants(@Param("eventId") Long eventId);
+
 
 }

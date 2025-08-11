@@ -9,30 +9,40 @@ import com.ensemble.model.Conversation;
 import com.ensemble.model.Message;
 import com.ensemble.model.User;
 import com.ensemble.repository.ConversationRepository;
+import com.ensemble.repository.EventRepository;
 import com.ensemble.repository.MessageRepository;
 import com.ensemble.repository.UserRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 public class ChatService {
 
     private final ConversationRepository conversationRepo;
     private final UserRepository userRepo;
     private final MessageRepository messageRepo;
+
+    private final EventRepository eventRepo;
     private final ChatMapper mapper;
 
     public ChatService(ConversationRepository conversationRepo, UserRepository userRepo, MessageRepository messageRepo,
+                       EventRepository eventRepo,
                        ChatMapper mapper) {
         this.conversationRepo = conversationRepo;
         this.userRepo = userRepo;
         this.messageRepo = messageRepo;
+        this.eventRepo = eventRepo;
         this.mapper = mapper;
     }
 
@@ -179,5 +189,53 @@ public class ChatService {
         return mapper.toConversationDTO(updated, last, canWrite);
     }
 
+    // import java.util.ArrayList;
+
+    @Transactional
+    public ConversationDTO openEventRoom(String meEmail, Long eventId) {
+        var me = userRepo.findByEmail(meEmail).orElseThrow();
+        var ev = eventRepo.findById(eventId).orElseThrow();
+
+        // autorisation
+        boolean isParticipant = ev.getParticipants().stream().anyMatch(u -> u.getId().equals(me.getId()));
+        if (!isParticipant) throw new AccessDeniedException("Non inscrit à cet événement.");
+
+        // 🔤 Construire le titre "tag - dd/MM/yyyy"
+        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy", Locale.FRANCE);
+        String dateStr = null;
+        try {
+            // si ev.getDate() est un LocalDate
+            dateStr = ev.getDate() != null ? ev.getDate().format(fmt) : null;
+        } catch (Exception ignore) { /* au cas où ce n'est pas un LocalDate */ }
+        if (dateStr == null && ev.getDate() != null) {
+            // si c'est une String déjà formattée
+            dateStr = String.valueOf(ev.getDate());
+        }
+        String computedName = ev.getTag() + (dateStr != null && !dateStr.isBlank() ? " - " + dateStr : "");
+
+        var convOpt = conversationRepo.findByEventIdWithParticipants(eventId);
+        Conversation conv;
+        if (convOpt.isEmpty()) {
+            conv = new Conversation();
+            conv.setType("GROUP");
+            conv.setEventId(eventId);
+            conv.setName(computedName);
+            conv.setParticipants(new java.util.ArrayList<>(ev.getParticipants()));
+            conv = conversationRepo.save(conv);
+        } else {
+            conv = convOpt.get();
+            // maj participants
+            var current = conv.getParticipants();
+            for (var p : ev.getParticipants()) if (!current.contains(p)) current.add(p);
+            // maj du nom si vide/différent
+            if (conv.getName() == null || conv.getName().isBlank() || !conv.getName().equals(computedName)) {
+                conv.setName(computedName);
+            }
+            conversationRepo.save(conv);
+        }
+
+        var last = messageRepo.findTopByConversationOrderByTimestampDesc(conv).orElse(null);
+        return mapper.toConversationDTO(conv, last);
+    }
 
 }

@@ -14,28 +14,44 @@ export class FriendsModalComponent {
 
   constructor(public activeModal: NgbActiveModal, private userService: UserService) {}
 
+
   removeFriend(contact: any) {
     if (this.isBusy) return;
-    const ok = confirm(`Retirer ${contact.firstName} ${contact.lastName} de vos ami(e)s ?`);
-    if (!ok) return;
+    if (!confirm(`Retirer ${contact.firstName} ${contact.lastName} de vos ami(e)s ?`)) return;
 
     this.isBusy = true;
 
-    // Optimiste: on enlève tout de suite de la liste
-    const prev = [...this.contacts];
-    this.contacts = this.contacts.filter(c => c.id !== contact.id);
+    // ✅ mutation in-place => le parent voit le changement
+    const idx = this.contacts.findIndex(c => c.id === contact.id);
+    if (idx > -1) this.contacts.splice(idx, 1);
 
     this.userService.removeFriend(contact.id).subscribe({
       next: () => {
         this.isBusy = false;
-        this.removed.emit(contact.id);   // optionnel
+        this.removed.emit(contact.id);   // prévenir le parent
       },
       error: err => {
         this.isBusy = false;
-        this.contacts = prev;            // rollback
         console.error(err);
         alert("Impossible de retirer cet(te) ami(e) pour l’instant.");
+        // (optionnel) recharger la liste si besoin
+        // this.activeModal.dismiss();
       }
     });
   }
+
+  ageOf(c: any): number | null {
+    const d = c?.birthdate;
+    if (!d) return null;
+
+    const bd = new Date(d); // accepte 'YYYY-MM-DD' ou ISO
+    if (isNaN(bd.getTime())) return null;
+
+    const today = new Date();
+    let age = today.getFullYear() - bd.getFullYear();
+    const m = today.getMonth() - bd.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < bd.getDate())) age--;
+    return age;
+  }
+
 }

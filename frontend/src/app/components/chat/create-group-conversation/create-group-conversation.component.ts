@@ -1,6 +1,7 @@
 import { Component, OnInit, Output, EventEmitter } from '@angular/core';
 import { ChatService } from '../../../services/chat.service';
 import { UserService } from '../../../services/user.service';
+import { ConversationDTO } from 'src/app/models/chat.models';
 
 @Component({
   selector: 'app-create-group-conversation',
@@ -13,7 +14,7 @@ export class CreateGroupConversationComponent implements OnInit {
   contacts: any[] = [];
   currentUserId!: number;
 
-  @Output() groupCreated = new EventEmitter<void>();
+  @Output() groupCreated = new EventEmitter<ConversationDTO>(); // ⬅ payload
   @Output() cancel = new EventEmitter<void>();
 
   constructor(private chatService: ChatService, private userService: UserService) {}
@@ -38,19 +39,15 @@ export class CreateGroupConversationComponent implements OnInit {
     }
 
     const allUserIds = [...this.selectedUserIds];
-
-    // S'assurer que l'utilisateur courant est bien dans la liste
-    if (!allUserIds.includes(this.currentUserId)) {
-      allUserIds.push(this.currentUserId);
-    }
+    if (!allUserIds.includes(this.currentUserId)) allUserIds.push(this.currentUserId);
 
     this.chatService.createGroupConversation({
       name: this.groupName,
       userIds: allUserIds
     }).subscribe({
-      next: () => {
+      next: (conv: ConversationDTO) => {
         alert("Groupe créé !");
-        this.groupCreated.emit();
+        this.groupCreated.emit(conv);           // ⬅️ send it up
       },
       error: () => alert("Erreur lors de la création du groupe.")
     });

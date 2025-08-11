@@ -53,6 +53,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/users/**").authenticated()
                         .requestMatchers("/api/messages/**").authenticated()
                         .requestMatchers("/api/conversations/**").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/chat/events/*/room").authenticated()
 
 
 

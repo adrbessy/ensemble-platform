@@ -52,7 +52,7 @@ export class ChatService {
   }
 
   createGroupConversation(data: { name: string; userIds: number[] }) {
-    return this.http.post(`${this.apiUrl}/chat/conversations/group`, data, {
+    return this.http.post<ConversationDTO>(`${this.apiUrl}/chat/conversations/group`, data, {
       withCredentials: true
     });
   }

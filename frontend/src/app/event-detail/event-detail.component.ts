@@ -140,6 +140,19 @@ export class EventDetailComponent implements OnInit {
       : 'http://localhost:8080/uploads/images/' + imageUrl;
   }
 
+  openEventChat(eventId: number) {
+    this.eventService.openEventChat(eventId).subscribe({
+      next: (conv) => {
+        // on va sur la messagerie et on demande l’ouverture de cette conversation
+        this.router.navigate(['/messagerie'], { queryParams: { conv: conv.id } });
+      },
+      error: (err) => {
+        console.error(err);
+        this.notificationService.error("Impossible d’ouvrir le chat de l’événement.");
+      }
+    });
+  }
+
 
 }
 

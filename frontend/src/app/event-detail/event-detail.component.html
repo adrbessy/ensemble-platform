@@ -31,10 +31,11 @@
 
     <!-- 👇 Affiche le bouton uniquement si l'utilisateur est inscrit -->
   <div *ngIf="hasUserParticipated(event)">
-    <a [routerLink]="['/chat', event.id]" class="btn btn-primary mt-3">
+    <button class="btn btn-primary mt-3" (click)="openEventChat(event.id)">
       Accéder au chat 💬
-    </a>
+    </button>
   </div>
+
 
   <hr />
 

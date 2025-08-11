@@ -64,19 +64,23 @@ export class EventService {
     return this.http.get(`${environment.apiUrl}/events/${id}`);
   }
 
-searchEvents(minAge?: number, maxAge?: number): Observable<Event[]> {
-  const params: any = {};
-  if (minAge !== undefined) params.minAge = minAge;
-  if (maxAge !== undefined) params.maxAge = maxAge;
+  searchEvents(minAge?: number, maxAge?: number): Observable<Event[]> {
+    const params: any = {};
+    if (minAge !== undefined) params.minAge = minAge;
+    if (maxAge !== undefined) params.maxAge = maxAge;
 
-  const token = localStorage.getItem('token');
-  const headers: any = token ? { Authorization: `Bearer ${token}` } : {};
+    const token = localStorage.getItem('token');
+    const headers: any = token ? { Authorization: `Bearer ${token}` } : {};
 
-  return this.http.get<Event[]>('/api/events/search', { params, headers });
-}
+    return this.http.get<Event[]>('/api/events/search', { params, headers });
+  }
 
+  openEventChat(eventId: number) {
+    const token = localStorage.getItem('token');
+    const headers: any = token ? { Authorization: `Bearer ${token}` } : {};
 
-
+    return this.http.post<any>(`${environment.apiUrl}/chat/events/${eventId}/room`, {}, { headers });
+  }
 
 
 }

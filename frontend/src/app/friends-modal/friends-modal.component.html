@@ -10,7 +10,10 @@
         <img [src]="'http://localhost:8080/uploads/photos/' + contact.photoFilename"
              class="rounded-circle" width="40" height="40"
              onerror="this.src='assets/default-avatar.png'" />
-        <span>{{ contact.firstName }} {{ contact.lastName }}</span>
+        <span class="me-2">{{ contact.firstName }} {{ contact.lastName }}</span>
+        <small class="text-muted" *ngIf="ageOf(contact) !== null">
+          {{ ageOf(contact) }} ans
+        </small>
       </div>
 
       <!-- Menu 3 points -->

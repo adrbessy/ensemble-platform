@@ -9,9 +9,10 @@
     <!-- Affichage conditionnel -->
     <app-create-group-conversation
       *ngIf="showCreateGroup"
-      (groupCreated)="onGroupCreated()"
-      (cancel)="showCreateGroup = false"
-    ></app-create-group-conversation>
+      (groupCreated)="onGroupCreated($event)"
+      (cancel)="showCreateGroup = false">
+    </app-create-group-conversation>
+
 
     <button class="btn btn-outline-secondary w-100 mb-2" (click)="toggleNewPrivateConvForm()">
   💬 Nouvelle discussion
@@ -102,16 +103,27 @@
 
   <!-- Zone de messages -->
   <div class="chat-box">
-    <div class="header d-flex flex-column align-items-start mb-2">
-      <div class="fw-bold">{{ selectedConv?.name }}</div>
-      <div class="participants text-muted small">
-        <ng-container *ngIf="selectedConv?.type === 'GROUP'">
-          Participants :
-          <span *ngFor="let p of selectedConv?.participants; let last = last">
-            {{ p.firstName }} {{ p.lastName }}<span *ngIf="!last">, </span>
-          </span>
-        </ng-container>
+    <div class="header d-flex align-items-center justify-content-between mb-2">
+      <!-- Titre + participants -->
+      <div>
+        <div class="fw-bold">{{ selectedConv?.name }}</div>
+        <div class="participants text-muted small">
+          <ng-container *ngIf="selectedConv?.type === 'GROUP'">
+            Participants :
+            <span *ngFor="let p of selectedConv?.participants; let last = last">
+              {{ p.firstName }} {{ p.lastName }}<span *ngIf="!last">, </span>
+            </span>
+          </ng-container>
+        </div>
       </div>
+
+      <!-- Bouton retour vers l’activité -->
+      <button
+        *ngIf="selectedConv?.eventId"
+        class="btn btn-outline-secondary btn-sm"
+        (click)="goToEventDetail(selectedConv.eventId)">
+        ↩ Retour à l’activité
+      </button>
     </div>
 
       <!-- 👇 Ajout des membres au groupe (si type GROUP) -->

@@ -17,60 +17,38 @@ public class ChatMapper {
         return new UserSummaryDTO(u.getId(), u.getFirstName(), u.getLastName(), u.getPhotoFilename());
     }
 
-    public ConversationDTO toConversationDTO(Conversation c) {
-        return toConversationDTO(c, null);
-    }
-
     public MessageDTO toMessageDTO(Message m) {
         return new MessageDTO(
                 m.getId(),
                 m.getContent(),
-                m.getTimestamp(),            // déjà un Instant UTC
+                m.getTimestamp(),
                 toUserSummary(m.getSender())
         );
     }
 
-    public List<MessageDTO> toMessageDTOs(List<Message> msgs) {
-        return msgs.stream().map(this::toMessageDTO).collect(Collectors.toList());
+    public ConversationDTO toConversationDTO(Conversation c) {
+        return toConversationDTO(c, null, null);
     }
 
     public ConversationDTO toConversationDTO(Conversation c, Message lastMsg) {
-        List<UserSummaryDTO> parts = c.getParticipants().stream()
-                .map(this::toUserSummary).toList();
+        return toConversationDTO(c, lastMsg, null);
+    }
 
-        ConversationDTO dto = new ConversationDTO();
+    public ConversationDTO toConversationDTO(Conversation c, Message lastMsg, Boolean canWrite) {
+        var dto = new ConversationDTO();
         dto.setId(c.getId());
         dto.setName(c.getName());
         dto.setType(c.getType());
-        dto.setParticipants(parts);
-        dto.setCanWrite(null);
+        dto.setParticipants(
+                c.getParticipants().stream().map(this::toUserSummary).toList()
+        );
+        dto.setEventId(c.getEventId());           // 👈 NEW
+        dto.setCanWrite(canWrite);                // null si non calculé
+
         if (lastMsg != null) {
             dto.setLastMessage(toMessageDTO(lastMsg));
         }
         return dto;
     }
-
-    // ChatMapper.java
-    public ConversationDTO toConversationDTO(Conversation c, Message last, boolean canWrite) {
-        List<UserSummaryDTO> parts = c.getParticipants()
-                .stream().map(this::toUserSummary).collect(Collectors.toList());
-
-        ConversationDTO dto = new ConversationDTO();
-        dto.setId(c.getId());
-        dto.setName(c.getName());
-        dto.setType(c.getType());
-        dto.setParticipants(parts);
-        if (last != null) {
-            dto.setLastMessage(toMessageDTO(last));
-        }
-        // ajoute la propriété si elle n’existe pas encore dans ton DTO
-        // (sinon ajoute-la : private Boolean canWrite;)
-        try { // si tu as déjà le champ
-            var f = ConversationDTO.class.getDeclaredField("canWrite");
-            f.setAccessible(true);
-            f.set(dto, canWrite);
-        } catch (Exception ignore) {}
-        return dto;
-    }
-
 }
+

@@ -16,5 +16,5 @@ public class ConversationDTO {
     private List<UserSummaryDTO> participants;
     private MessageDTO lastMessage;
     private Boolean canWrite;
-
+    private Long eventId;
 }

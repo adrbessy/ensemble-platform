@@ -56,5 +56,10 @@ public class ChatController {
         return chatService.getOrCreatePrivateConversationDTO(principal.getName(), otherUserId);
     }
 
+    @PostMapping("/events/{eventId}/room")
+    public ConversationDTO openEventRoom(@PathVariable Long eventId, Principal principal) {
+        return chatService.openEventRoom(principal.getName(), eventId);
+    }
+
 
 }

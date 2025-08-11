@@ -29,6 +29,9 @@ public class Conversation {
     @OneToMany(mappedBy = "conversation", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Message> messages = new ArrayList<>();
 
+    @Column(unique = true)
+    private Long eventId; // null pour les conversations hors-événement
+
     public Message getLastMessage() {
         if (messages == null || messages.isEmpty()) return null;
 
