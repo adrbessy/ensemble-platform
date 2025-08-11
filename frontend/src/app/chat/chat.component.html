@@ -128,7 +128,7 @@
 
       <!-- 👇 Ajout des membres au groupe (si type GROUP) -->
     <button 
-      *ngIf="selectedConv?.type === 'GROUP'" 
+      *ngIf="selectedConv?.type === 'GROUP' && !selectedConv?.eventId"
       class="btn btn-light btn-sm px-2 py-1 ms-3 mt-1 d-flex align-items-center gap-1"
       style="font-size: 0.85rem;"
       (click)="openAddMembersModal()">

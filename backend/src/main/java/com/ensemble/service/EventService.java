@@ -7,7 +7,9 @@ import com.ensemble.model.Event;
 import com.ensemble.model.EventVisibility;
 import com.ensemble.model.Group;
 import com.ensemble.model.User;
+import com.ensemble.repository.ConversationRepository;
 import com.ensemble.repository.EventRepository;
+import com.ensemble.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,8 +20,14 @@ import java.util.stream.Collectors;
 @Service
 public class EventService {
     private final EventRepository eventRepository;
-    public EventService(EventRepository repository) {
-        this.eventRepository = repository;
+    private final ConversationRepository conversationRepository;
+    private final UserRepository userRepository; // si tu veux charger l'entité User
+    public EventService(EventRepository eventRepository,
+                        ConversationRepository conversationRepository,
+                        UserRepository userRepository) {
+        this.eventRepository = eventRepository;
+        this.conversationRepository = conversationRepository;
+        this.userRepository = userRepository;
     }
     public List<Event> findAll() {
         return eventRepository.findAll();
@@ -36,24 +44,46 @@ public class EventService {
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new RuntimeException("Événement introuvable"));
 
-        if (!event.getParticipants().contains(user)) {
+        if (event.getParticipants().stream().noneMatch(u -> u.getId().equals(user.getId()))) {
             event.getParticipants().add(user);
             eventRepository.save(event);
         }
+
+        conversationRepository.findByEventIdWithParticipants(eventId).ifPresent(conv -> {
+            if (conv.getParticipants().stream().noneMatch(u -> u.getId().equals(user.getId()))) {
+                conv.getParticipants().add(user);
+                conversationRepository.save(conv);
+            }
+        });
     }
 
+    @Transactional
     public void withdrawParticipant(Long eventId, Long userId) {
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new RuntimeException("Événement non trouvé"));
 
-        event.getParticipants().removeIf(user -> user.getId().equals(userId));
+        // 1) retirer du participant de l'événement
+        event.getParticipants().removeIf(u -> u.getId().equals(userId));
 
         if (event.getParticipants().isEmpty()) {
-            // 🔥 Supprimer l'événement si plus aucun participant
+            // 2a) supprimer aussi le salon s'il existe
+            conversationRepository.findByEventId(eventId)
+                    .ifPresent(conversationRepository::delete);
             eventRepository.delete(event);
+            return;
         } else {
             eventRepository.save(event);
         }
+
+        // 2b) s'il reste des participants, synchroniser le salon : retirer l'utilisateur
+        conversationRepository.findByEventIdWithParticipants(eventId).ifPresent(conv -> {
+            conv.getParticipants().removeIf(u -> u.getId().equals(userId));
+            if (conv.getParticipants().isEmpty()) {
+                conversationRepository.delete(conv);
+            } else {
+                conversationRepository.save(conv);
+            }
+        });
     }
 
 

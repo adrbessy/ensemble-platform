@@ -171,6 +171,11 @@ public class ChatService {
         Conversation conversation = conversationRepo.findById(conversationId)
                 .orElseThrow(() -> new RuntimeException("Conversation introuvable"));
 
+        // 🚫 Groupe d’activité : pas d’ajout manuel
+        if (conversation.getEventId() != null) {
+            throw new AccessDeniedException("Impossible d’ajouter des membres sur un salon d’activité.");
+        }
+
         List<User> newUsers = userRepo.findAllById(userIds);
         for (User u : newUsers) {
             if (!conversation.getParticipants().contains(u)) {
@@ -183,8 +188,6 @@ public class ChatService {
                 .orElseThrow(() -> new RuntimeException("Conversation introuvable après ajout"));
 
         Message last = messageRepo.findTopByConversationOrderByTimestampDesc(updated).orElse(null);
-
-        // canWrite: true pour groupe / privé inchangé (tu peux aussi calculer selon l'utilisateur courant)
         boolean canWrite = !"PRIVATE".equals(updated.getType());
         return mapper.toConversationDTO(updated, last, canWrite);
     }
