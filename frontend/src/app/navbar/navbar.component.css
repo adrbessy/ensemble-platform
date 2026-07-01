@@ -10,7 +10,8 @@
   border-bottom: 1px solid #eee;
   position: sticky;
   top: 0;
-  z-index: 1000;
+  z-index: 1040; 
+  overflow: visible; 
   margin-bottom: 0 !important;
 }
 
@@ -38,20 +39,83 @@
   transition: border-bottom 0.2s ease;
 }
 
-.messaging-icon-wrapper {
+/* le conteneur du picto doit être relatif */
+.messaging-icon-wrapper,
+.notif-link {
   position: relative;
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
 }
 
-.notification-badge {
+/* badge 100% inside the icon */
+.notification-badge{
   position: absolute;
-  top: -2px;
-  right: -4px;
-  width: 10px;
-  height: 10px;
-  background-color: red;
-  border-radius: 50%;
-  border: 1px solid white;
-  z-index: 10;
+  top: 0; right: 0;
+  transform: translate(35%, -35%);   /* place au coin sans sortir de l'écran */
+  width: 18px; height: 18px;         /* cercle parfait */
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: #ff3b30;
+  color: #fff;
+  font-size: 11px;
+  line-height: 1;                     /* évite le décentrage vertical */
+  font-weight: 700;
+  font-variant-numeric: tabular-nums; /* chiffres à chasse fixe = centrage visuel meilleur */
+  box-shadow: 0 0 0 2px #fef9dc;      /* anneau couleur navbar */
+  z-index: 2;
 }
 
+/* 2+ chiffres -> pastille ovale mais toujours centrée */
+.notification-badge.badge-wide{
+  min-width: 22px;
+  padding: 0 4px;
+}
+
+#notifDropdown::after {
+  display: none !important;
+}
+
+.notif-menu { min-width: 280px; max-width: 360px; }
+
+.nav-item.dropdown { position: relative; }
+
+.navbar .dropdown-menu {
+  position: absolute !important;   /* override la règle de Bootstrap */
+  top: calc(100% + .5rem);         /* juste sous la cloche */
+  right: 0;                        /* aligné à droite */
+  left: auto;
+  margin: 0;                       /* évite les surprises */
+  z-index: 1100;                   /* au-dessus du contenu */
+}
+
+.navbar .dropdown-menu.show { display: block; }
+
+.invite-item { max-width: 100%; }
+.invite-icon { font-size: 1.1rem; line-height: 1.2; }
+.invite-line { font-weight: 600; }
+/* Titre sur 1 ligne, ellipsis */
+.invite-title{
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+.invite-meta{
+  font-size: .85rem;
+  color: #6c757d;
+  overflow-wrap: anywhere;   /* évite les débordements sur noms longs */
+}
+.invite-meta .badge { border-radius: 999px; }
+
+/* Actions compactes */
+.invite-actions .btn{ padding: .25rem .5rem; font-size: .8rem; }
+
+/* Important pour que l’ellipsis fonctionne dans un contexte flex */
+.flex-grow-1.min-w-0 { min-width: 0; }

@@ -58,67 +58,61 @@ h4 {
   max-width: 800px;
 }
 
-/* ✅ Groupe avec date sticky à gauche (desktop) */
-.group-wrapper {
-  position: relative;
-  display: flex;
-  flex-direction: row;
-  justify-content: center;
-  align-items: flex-start;
-  gap: 1rem;
+/* ---- wrapper en 2 colonnes : date (160px) + contenu (flex) ---- */
+.group-wrapper{
+  display: grid;
+  grid-template-columns: 160px minmax(0,1fr);
+  align-items: start;
+  column-gap: 1rem;
   margin: 0 auto;
   max-width: 1000px;
 }
 
-/* 📅 Date sticky */
-.date-sticky {
-  align-self: start;
-  position: sticky;
-  top: 125px;
-  z-index: 10;
-  background: #f8f9fa;
-  padding: 0.4rem 0.8rem;
-  border-left: 4px solid #0d6efd;
-  border-radius: 0.5rem;
-  font-weight: bold;
+/* la pastille reste sticky mais ne dépassera plus */
+.date-sticky{
+  justify-self: end;         /* colle la pastille au bord droit de sa colonne */
+  max-width: 150px;          /* sécurité pour ne jamais dépasser la colonne */
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
-  height: fit-content;
-  min-width: 140px;
-  max-width: 140px;
-  width: 140px;
-  text-align: center;
-  margin-right: 0.5rem; /* ou 1rem selon ton goût */
+  position: sticky;
+  top: 125px;                /* ton offset */
 }
 
-.date-sticky i {
+/* petit “ruban” coloré à gauche */
+.date-sticky::before{
+  content: "";
+  width: 6px;
+  height: 70%;
+  border-radius: 3px;
+  background: linear-gradient(180deg,#0d6efd,#5aa9ff);
+  display: inline-block;
+}
+
+/* icône et texte */
+.date-sticky i{
+  color: #0d6efd;
   font-size: 1rem;
-  margin-right: 0.25rem;
-  vertical-align: middle;
+  margin-left: .1rem;
 }
 
 
-/* ✅ Cartes centrées */
-.group-events {
+
+/* la colonne des cartes */
+.group-events{
   width: 100%;
   max-width: 800px;
 }
 
-/* 📱 Sur mobile, la date passe au-dessus */
-@media (max-width: 767px) {
-  .group-wrapper {
-    flex-direction: column;
-    align-items: center;
-  }
-
-  .date-sticky {
+/* Mobile : rebasculer en une seule colonne */
+@media (max-width: 767px){
+  .group-wrapper{ display:block; }
+  .date-sticky{
     position: sticky;
     top: 60px;
     width: 100%;
-    max-width: 750px;
-    border-left: none;
-    border-bottom: 2px solid #0d6efd;
-    border-radius: 0;
-    margin-bottom: 1rem;
+    max-width: none;
+    justify-self: stretch;
   }
 }
 

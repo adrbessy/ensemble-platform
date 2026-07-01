@@ -4,7 +4,8 @@ import { Injectable } from '@angular/core';
 import { User } from '../models/user.model';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
-
+import { FriendRequest } from '../models/friend-request.model';
+import { EventInvite } from '../models/event-invite.model';
 
 @Injectable({ providedIn: 'root' })
 export class UserService {
@@ -40,7 +41,10 @@ export class UserService {
     }
 
     sendFriendRequest(code: string) {
-        return this.http.post('/api/users/send-friend-request', { friendCode: code });
+        return this.http.post<{ message: string }>(
+            '/api/users/send-friend-request',
+            { friendCode: code }
+        );
     }
 
     getFriendRequests() {
@@ -79,5 +83,31 @@ export class UserService {
         });
     }
 
+    /** Demandes d'amis ENVOYÉES (par moi), encore en attente */
+  getSentFriendRequests() {
+    return this.http.get<FriendRequest[]>('/api/users/friend-requests/sent');
+  }
+
+  /** Annuler une demande envoyée par moi */
+  cancelSentFriendRequest(id: number) {
+    return this.http.delete<void>(`/api/users/friend-requests/sent/${id}`);
+  }
+
+    getEventInvites() {
+        return this.http.get<EventInvite[]>('/api/users/event-invites');
+    }
+
+    acceptEventInvite(id: number) {
+        return this.http.post(`/api/users/event-invites/${id}/accept`, {});
+    }
+
+    declineEventInvite(id: number) {
+        return this.http.post(`/api/users/event-invites/${id}/decline`, {});
+    }
+
+    // (depuis la page de création d’activité)
+    inviteUserToEvent(eventId: number, inviteeId: number) {
+        return this.http.post(`/api/users/events/${eventId}/invite`, { inviteeId });
+    }
 
 }

@@ -31,12 +31,71 @@
             <a class="nav-link" routerLink="/messagerie" title="Messagerie">
               <div class="messaging-icon-wrapper">
                 <i class="bi bi-chat-dots fs-5"></i>
-              <span
-                *ngIf="chatService.badge$ | async"
-                class="notification-badge position-absolute top-0 start-100 translate-middle">
-              </span>
+                <span *ngIf="chatService.badge$ | async as count" class="notification-badge">
+                  {{ count > 99 ? '99+' : count }}
+                </span>
               </div>
             </a>
+          </li>
+
+          <li class="nav-item dropdown" ngbDropdown autoClose="outside" (openChange)="onDropdownOpen($event)">
+            <a class="nav-link notif-link" ngbDropdownToggle id="notifDropdown" role="button">
+              <i class="bi bi-bell fs-5"></i>
+              <span *ngIf="notificationCount > 0"
+                    class="notification-badge"
+                    [class.badge-wide]="notificationCount > 9">
+                {{ notificationCount > 99 ? '99+' : notificationCount }}
+              </span>
+            </a>
+
+            <!-- Notifications dropdown -->
+            <div ngbDropdownMenu class="dropdown-menu dropdown-menu-end notif-menu shadow-sm rounded-3 p-0">
+
+              <ng-container *ngIf="(invites || []).length > 0; else noNotif">
+                <div *ngFor="let inv of invites" class="dropdown-item py-2 px-3 invite-item">
+                  <div class="d-flex align-items-start gap-2">
+                    <i class="bi bi-ticket-perforated text-primary fs-5"></i>
+
+                    <div class="flex-grow-1 min-w-0">
+                      <!-- Ligne 1 : Titre (ellipsis) -->
+                      <div class="invite-title">
+                        {{ inv.eventTitle || 'Invitation à une activité' }}
+                      </div>
+
+                      <!-- Ligne 2 : Auteur + date (petit, gris) -->
+                      <div class="invite-meta text-muted">
+                        <span *ngIf="inv.inviterName" class="invite-author">
+                          par {{ inv.inviterName }}
+                        </span>
+                        <span *ngIf="inv.date"> · {{ inv.date | date:'EEE d MMM · HH:mm' }}</span>
+                      </div>
+
+                      <!-- Actions -->
+                      <div class="invite-actions mt-2">
+                        <a
+                          ngbDropdownItem
+                          class="btn btn-sm btn-outline-primary"
+                          [routerLink]="['/activite', inv.eventId]"
+                          (click)="$event.stopPropagation(); closeNotifDropdown()">
+                          Voir
+                        </a>
+
+                        <button type="button" class="btn btn-sm btn-primary ms-2" (click)="acceptInvite(inv)">
+                          Accepter
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary ms-2" (click)="dismissInvite(inv)">
+                          Ignorer
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </ng-container>
+
+              <ng-template #noNotif>
+                <div class="dropdown-item text-muted py-2 px-3">Aucune notification</div>
+              </ng-template>
+            </div>
           </li>
           
           <!-- Avatar + nom -->

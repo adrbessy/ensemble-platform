@@ -5,6 +5,8 @@ import { UserService } from '../services/user.service';
 import { Router } from '@angular/router';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { FriendsModalComponent } from '../friends-modal/friends-modal.component';
+import { ActivatedRoute } from '@angular/router';
+import { ElementRef, ViewChild } from '@angular/core';
 
 @Component({
   selector: 'app-mon-profil',
@@ -12,6 +14,7 @@ import { FriendsModalComponent } from '../friends-modal/friends-modal.component'
   styleUrls: ['./mon-profil.component.css']
 })
 export class MonProfilComponent {
+  @ViewChild('requestsSection') requestsSection!: ElementRef<HTMLDivElement>;
 
   user: any = null;
   edit = {
@@ -20,16 +23,35 @@ export class MonProfilComponent {
     firstName: false,
     lastName: false
   };
-
+  pulseRequests = false;
+  friendRequests: any[] = [];
+  sentFriendRequests: any[] = [];
 
   constructor(private authService: AuthService,  
     private userService: UserService, 
     private router: Router,
-    private modalService: NgbModal) {}
+    private modalService: NgbModal,
+    private route: ActivatedRoute) {}
 
   ngOnInit(): void {
-      this.loadProfile();
+    this.loadProfile();
     this.loadFriendRequests();
+    this.loadSentFriendRequests(); 
+
+    this.route.queryParamMap.subscribe(params => {
+      const focus = params.get('focus');
+      if (focus === 'requests') {
+        // S’assurer que la liste est chargée, puis scroller
+        setTimeout(() => {
+          if (this.requestsSection) {
+            this.requestsSection?.nativeElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            this.pulseRequests = true;
+            setTimeout(() => this.pulseRequests = false, 1500);
+          }
+        }, 100);
+      }
+    });
+    
     this.userService.getMyProfile().subscribe(console.log);
     this.userService.getMyProfile().subscribe({
       next: (data) => {
@@ -38,6 +60,13 @@ export class MonProfilComponent {
       error: (err) => {
         console.error("Erreur chargement profil :", err);
       }
+    });
+  }
+
+  loadSentFriendRequests() {
+    this.userService.getSentFriendRequests().subscribe({
+      next: reqs => this.sentFriendRequests = (reqs || []).filter(r => !r.accepted),
+      error: e => console.error('Err sent FR', e)
     });
   }
 
@@ -89,22 +118,27 @@ export class MonProfilComponent {
   friendCode = "";
   friendAddedMessage = "";
 
+  // après envoi, rafraîchir la liste envoyée
   ajouterAmi() {
     if (!this.friendCode.trim()) return;
-
     this.userService.sendFriendRequest(this.friendCode.trim()).subscribe({
-      next: (res: any) => {
-        this.friendAddedMessage = res.message || "✅ Demande envoyée !";
-        this.friendCode = "";
+      next: res => {
+        this.friendAddedMessage = res.message || '✅ Demande envoyée !';
+        this.friendCode = '';
+        this.loadSentFriendRequests();        // ⬅️
       },
-      error: (err) => {
-        console.error("Erreur demande ami :", err);
-        this.friendAddedMessage = err.error?.error || "❌ Erreur lors de la demande.";
+      error: err => {
+        console.error('Erreur demande ami :', err);
+        this.friendAddedMessage = err.error?.error || '❌ Erreur lors de la demande.';
       }
     });
   }
 
-  friendRequests: any[] = [];
+  annulerDemandeEnvoyee(id: number) {
+    this.userService.cancelSentFriendRequest(id).subscribe({
+      next: () => this.loadSentFriendRequests()
+    });
+  }
 
   loadProfile() {
     this.userService.getMyProfile().subscribe({

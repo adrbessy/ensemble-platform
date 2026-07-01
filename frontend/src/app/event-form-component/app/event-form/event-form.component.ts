@@ -10,6 +10,10 @@ import { NgbDateStruct } from '@ng-bootstrap/ng-bootstrap';
 import { AfterViewInit, ElementRef, ViewChild } from '@angular/core';
 import { AuthService } from 'src/app/auth.service';
 import { ContactService } from 'src/app/services/contact.service';
+import { forkJoin, of } from 'rxjs';
+import { finalize, switchMap } from 'rxjs/operators';
+import { UserService } from 'src/app/services/user.service';
+
 declare var google: any;
 
 interface EventForm {
@@ -48,9 +52,22 @@ export class EventFormComponent {
     this.loadGoogleMaps(() => {
       if (!this.searchInput) return;
 
+      console.log("google", google);
+      console.log("maps", google.maps);
+      console.log("places", google.maps.places);
+      console.log("Autocomplete", google.maps.places?.Autocomplete);
+      console.log("input =", this.searchInput.nativeElement);
+      console.log("input value =", this.searchInput.nativeElement.value);
+
       const autocomplete = new google.maps.places.Autocomplete(this.searchInput.nativeElement, {
         types: ['establishment'],
         componentRestrictions: { country: 'fr' }
+      });
+
+      console.log("autocomplete créé");
+
+      google.maps.event.addListenerOnce(autocomplete, "place_changed", () => {
+          console.log("place changed");
       });
 
       autocomplete.addListener('place_changed', () => {
@@ -71,17 +88,32 @@ export class EventFormComponent {
   }
 
   loadGoogleMaps(callback: () => void): void {
-    // Si déjà chargé
-    if ((window as any).google && (window as any).google.maps) {
+    // API déjà complètement chargée
+    if (
+      (window as any).google &&
+      (window as any).google.maps &&
+      (window as any).google.maps.places
+    ) {
       callback();
       return;
     }
 
+    // Un script est déjà en cours de chargement
+    const existingScript = document.querySelector(
+      'script[src*="maps.googleapis.com/maps/api/js"]'
+    ) as HTMLScriptElement;
+
+    if (existingScript) {
+      existingScript.addEventListener('load', callback);
+      return;
+    }
+
     const script = document.createElement('script');
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${environment.googleApiKey}&libraries=places`;
+   script.src =`https://maps.googleapis.com/maps/api/js?key=${environment.googleApiKey}&libraries=places&v=weekly`;
     script.async = true;
     script.defer = true;
     script.onload = callback;
+
     document.body.appendChild(script);
   }
 
@@ -112,7 +144,8 @@ export class EventFormComponent {
     'Atelier de langues', 'Bowling', 'Escape game', 'Cinéma', 'Karaoké', 'Pique-nique', 'Yoga/méditation/pilates', 'Jogging/Running',
     'Ping-pong', 'Badminton', 'Tennis', 'Squash', 'Footing', 'Cyclisme', 'Natation', 'Escalade', 'Arts martiaux', 'Billard', 'Taromancie', 
     'Photographie', 'Cuisine', 'Bricolage', 'Jardinage', 'Musique', 'Danse', 'Théâtre', 'Peinture/Dessin', 'Écriture/Poésie', 'Apéro', 
-    'Pétanque', 'Boire un verre'
+    'Pétanque', 'Boire un verre', 'Soirée', 'Jeux vidéo', 'Lecture', 'Atelier DIY', 'Visite guidée', 'Exposition', 'Festival', 'Marché local', 'Atelier cuisine',
+    'Atelier artistique', 'Atelier bien-être', 'Atelier technologique', 'Atelier jardinage', 'Atelier photographie', 'Atelier musique', 'Atelier danse', 'Rooftop'
   ];
   tagCounts: { [tag: string]: number } = {
     'jeux de société': 5,
@@ -163,7 +196,7 @@ export class EventFormComponent {
   currentStep = 1;
 
   constructor(private http: HttpClient, private eventService: EventService, private router: Router, private notificationService: NotificationService,
-  private groupService: GroupService, private authService: AuthService, private contactService: ContactService) {
+  private groupService: GroupService, private authService: AuthService, private contactService: ContactService, private userService: UserService) {
     const today = new Date();
     this.minDate = {
       year: today.getFullYear(),
@@ -525,42 +558,56 @@ export class EventFormComponent {
 
     this.loading = true;
 
-    this.http.post(`${environment.apiUrl}/events`, formData)
+    this.http.post<{ id: number }>(`${environment.apiUrl}/events`, formData)
+      .pipe(
+        // when the event is created, chain the invites if needed
+        switchMap(evt => {
+          const eventId = evt.id;
+
+          // only if CUSTOM visibility + contacts selected
+          const ids = this.event.visibility === 'CUSTOM' ? (this.event.invitedUserIds || []) : [];
+          if (!ids.length) return of(null); // nothing to invite
+
+          const calls = ids.map(uid => this.userService.inviteUserToEvent(eventId, uid));
+          return forkJoin(calls);
+        }),
+        finalize(() => this.loading = false)
+      )
       .subscribe({
         next: () => {
-        // ✅ Affiche le message
-        this.notificationService.success("Événement créé !");
+          this.notificationService.success('Événement créé !');
 
-        // ✅ Redirige vers la liste des événements
-        this.router.navigate(['/events']);
-
-          // 👉 Notifie les autres composants (comme event-list) de recharger
+          // notifier le reste de l’app et naviguer
           this.eventService.notifyEventCreated();
+          this.router.navigate(['/events']);
 
-          // Optionnel : réinitialiser le formulaire
+          // reset du formulaire
           this.event = {
             title: '',
             description: '',
             location: '',
-            placeName: '', // Réinitialise le nom du lieu
-            address: '', // Réinitialise l'adresse
+            placeName: '',
+            address: '',
             date: null,
             tag: '',
             minParticipants: 4,
             maxParticipants: 6,
             genderRequirement: 'Parité',
             visibility: 'PUBLIC',
-            groupId: null, // Réinitialise le groupe sélectionné
+            groupId: null,
             invitedUserIds: [],
             startTime: '',
-            endTime: '' // Réinitialise les heures de début et de fin
+            endTime: ''
           };
+          this.selectedFile = null;
+          this.previewUrl = null;
         },
         error: err => {
           console.error(err);
-          this.notificationService.error("Erreur de création.");
+          this.notificationService.error('Erreur de création.');
         }
       });
+
       this.successMessage = true;
       setTimeout(() => this.successMessage = false, 3000);
       const payload = {
